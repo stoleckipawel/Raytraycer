@@ -30,7 +30,8 @@ public:
 		auto FrontBuffer = m_Renderer.GetFrontBuffer();
 		if (FrontBuffer)
 		{
-			ImGui::Image(FrontBuffer->GetDescriptorSet(), { (float)FrontBuffer->GetWidth(), (float)FrontBuffer->GetHeight() });
+			ImGui::Image(FrontBuffer->GetDescriptorSet(), { (float)FrontBuffer->GetWidth(), (float)FrontBuffer->GetHeight() },
+				ImVec2(0,1), ImVec2(1,0));
 		}
 		
 		ImGui::End();
