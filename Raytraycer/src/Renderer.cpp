@@ -3,10 +3,13 @@
 
 void Renderer::Render()
 {
-	for (uint32_t i = 0; i < m_FrontBuffer->GetWidth() * m_FrontBuffer->GetHeight(); i++)
+	for (uint32_t y = 0; y < m_FrontBuffer->GetHeight(); y++)
 	{
-		m_FrontBufferData[i] = Walnut::Random::UInt();
-		m_FrontBufferData[i] |= 0xff000000;
+		for (uint32_t x = 0; x < m_FrontBuffer->GetWidth(); x++)
+		{
+			glm::vec2 coord = glm::vec2((float)x / (float)m_FrontBuffer->GetHeight(), (float)y / (float)m_FrontBuffer->GetWidth());
+			m_FrontBufferData[x + y * m_FrontBuffer->GetWidth()] = PerPixel(coord);
+		}
 	}
 
 	m_FrontBuffer->SetData(m_FrontBufferData);
@@ -30,5 +33,12 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 	delete[] m_FrontBufferData;
 	m_FrontBufferData = new uint32_t[width * height];
 
+}
+
+uint32_t Renderer::PerPixel(glm::vec2 coord)
+{
+	uint32_t color = Walnut::Random::UInt();
+	color |= 0xff000000;
+	return color;
 }
 
