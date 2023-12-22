@@ -25,12 +25,12 @@ namespace Walnut {
 			return 0xffffffff;
 		}
 
-		static uint32_t BytesPerChannel(ImageFormat format)
+		static uint32_t BytesPerPixel(ImageFormat format)
 		{
 			switch (format)
 			{
 				case ImageFormat::RGBA:    return 4;
-				case ImageFormat::RGBA32F: return 32;
+				case ImageFormat::RGBA32F: return 16;
 			}
 			return 0;
 		}
@@ -52,50 +52,36 @@ namespace Walnut {
 	{
 		int width, height, channels;
 		uint8_t* data = nullptr;
-		uint64_t size = 0;
 
 		if (stbi_is_hdr(m_Filepath.c_str()))
 		{
 			data = (uint8_t*)stbi_loadf(m_Filepath.c_str(), &width, &height, &channels, 4);
-			size = width * height * 4 * sizeof(float);
 			m_Format = ImageFormat::RGBA32F;
 		}
 		else
 		{
 			data = stbi_load(m_Filepath.c_str(), &width, &height, &channels, 4);
-			size = width * height * 4;
 			m_Format = ImageFormat::RGBA;
 		}
 
 		m_Width = width;
 		m_Height = height;
-
-		AllocateMemory(size);
+		
+		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
 		SetData(data);
 	}
 
 	Image::Image(uint32_t width, uint32_t height, ImageFormat format, const void* data)
 		: m_Width(width), m_Height(height), m_Format(format)
 	{
-		AllocateMemory(m_Width * m_Height * Utils::BytesPerChannel(m_Format));
+		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
 		if (data)
 			SetData(data);
 	}
 
 	Image::~Image()
 	{
-		Application::SubmitResourceFree([sampler = m_Sampler, imageView = m_ImageView, image = m_Image,
-			memory = m_Memory, stagingBuffer = m_StagingBuffer, stagingBufferMemory = m_StagingBufferMemory]()
-		{
-			VkDevice device = Application::GetDevice();
-
-			vkDestroySampler(device, sampler, nullptr);
-			vkDestroyImageView(device, imageView, nullptr);
-			vkDestroyImage(device, image, nullptr);
-			vkFreeMemory(device, memory, nullptr);
-			vkDestroyBuffer(device, stagingBuffer, nullptr);
-			vkFreeMemory(device, stagingBufferMemory, nullptr);
-		});
+		Release();
 	}
 
 	void Image::AllocateMemory(uint64_t size)
@@ -171,11 +157,34 @@ namespace Walnut {
 		m_DescriptorSet = (VkDescriptorSet)ImGui_ImplVulkan_AddTexture(m_Sampler, m_ImageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 
+	void Image::Release()
+	{
+		Application::SubmitResourceFree([sampler = m_Sampler, imageView = m_ImageView, image = m_Image,
+			memory = m_Memory, stagingBuffer = m_StagingBuffer, stagingBufferMemory = m_StagingBufferMemory]()
+		{
+			VkDevice device = Application::GetDevice();
+
+			vkDestroySampler(device, sampler, nullptr);
+			vkDestroyImageView(device, imageView, nullptr);
+			vkDestroyImage(device, image, nullptr);
+			vkFreeMemory(device, memory, nullptr);
+			vkDestroyBuffer(device, stagingBuffer, nullptr);
+			vkFreeMemory(device, stagingBufferMemory, nullptr);
+		});
+
+		m_Sampler = nullptr;
+		m_ImageView = nullptr;
+		m_Image = nullptr;
+		m_Memory = nullptr;
+		m_StagingBuffer = nullptr;
+		m_StagingBufferMemory = nullptr;
+	}
+
 	void Image::SetData(const void* data)
 	{
 		VkDevice device = Application::GetDevice();
 
-		size_t upload_size = m_Width * m_Height * Utils::BytesPerChannel(m_Format);
+		size_t upload_size = m_Width * m_Height * Utils::BytesPerPixel(m_Format);
 
 		VkResult err;
 
@@ -262,6 +271,20 @@ namespace Walnut {
 
 			Application::FlushCommandBuffer(command_buffer);
 		}
+	}
+
+	void Image::Resize(uint32_t width, uint32_t height)
+	{
+		if (m_Image && m_Width == width && m_Height == height)
+			return;
+
+		// TODO: max size?
+
+		m_Width = width;
+		m_Height = height;
+
+		Release();
+		AllocateMemory(m_Width * m_Height * Utils::BytesPerPixel(m_Format));
 	}
 
 }

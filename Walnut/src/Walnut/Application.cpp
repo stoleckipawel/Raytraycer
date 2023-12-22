@@ -12,6 +12,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
+#include <glm/glm.hpp>
 
 #include <iostream>
 
@@ -46,10 +47,15 @@ static ImGui_ImplVulkanH_Window g_MainWindowData;
 static int                      g_MinImageCount = 2;
 static bool                     g_SwapChainRebuild = false;
 
+// Per-frame-in-flight
 static std::vector<std::vector<VkCommandBuffer>> s_AllocatedCommandBuffers;
+static std::vector<std::vector<std::function<void()>>> s_ResourceFreeQueue;
 
-// NOTE(Yan): does this need to be per-frame in flight for this simple case?
-static std::vector<std::function<void()>> s_ResourceFreeQueue;
+// Unlike g_MainWindowData.FrameIndex, this is not the the swapchain image index
+// and is always guaranteed to increase (eg. 0, 1, 2, 0, 1, 2)
+static uint32_t s_CurrentFrameIndex = 0;
+
+static Walnut::Application* s_Instance = nullptr;
 
 void check_vk_result(VkResult err)
 {
@@ -278,6 +284,8 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 	}
 	check_vk_result(err);
 
+	s_CurrentFrameIndex = (s_CurrentFrameIndex + 1) % g_MainWindowData.ImageCount;
+
 	ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
 	{
 		err = vkWaitForFences(g_Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
@@ -289,12 +297,13 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 	
 	{
 		// Free resources in queue
-		for (auto& func : s_ResourceFreeQueue)
+		for (auto& func : s_ResourceFreeQueue[s_CurrentFrameIndex])
 			func();
-		s_ResourceFreeQueue.clear();
+		s_ResourceFreeQueue[s_CurrentFrameIndex].clear();
 	}
 	{
 		// Free command buffers allocated by Application::GetCommandBuffer
+		// These use g_MainWindowData.FrameIndex and not s_CurrentFrameIndex because they're tied to the swapchain image index
 		auto& allocatedCommandBuffers = s_AllocatedCommandBuffers[wd->FrameIndex];
 		if (allocatedCommandBuffers.size() > 0)
 		{
@@ -378,12 +387,21 @@ namespace Walnut {
 	Application::Application(const ApplicationSpecification& specification)
 		: m_Specification(specification)
 	{
+		s_Instance = this;
+
 		Init();
 	}
 
 	Application::~Application()
 	{
 		Shutdown();
+
+		s_Instance = nullptr;
+	}
+
+	Application& Application::Get()
+	{
+		return *s_Instance;
 	}
 
 	void Application::Init()
@@ -421,6 +439,7 @@ namespace Walnut {
 		SetupVulkanWindow(wd, surface, w, h);
 
 		s_AllocatedCommandBuffers.resize(wd->ImageCount);
+		s_ResourceFreeQueue.resize(wd->ImageCount);
 
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
@@ -512,8 +531,11 @@ namespace Walnut {
 		check_vk_result(err);
 
 		// Free resources in queue
-		for (auto& func : s_ResourceFreeQueue)
-			func();
+		for (auto& queue : s_ResourceFreeQueue)
+		{
+			for (auto& func : queue)
+				func();
+		}
 		s_ResourceFreeQueue.clear();
 
 		ImGui_ImplVulkan_Shutdown();
@@ -547,6 +569,9 @@ namespace Walnut {
 			// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 			glfwPollEvents();
 
+			for (auto& layer : m_LayerStack)
+				layer->OnUpdate(m_TimeStep);
+
 			// Resize swap chain?
 			if (g_SwapChainRebuild)
 			{
@@ -557,6 +582,11 @@ namespace Walnut {
 					ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
 					ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
 					g_MainWindowData.FrameIndex = 0;
+
+					// Clear allocated command buffers from here since entire pool is destroyed
+					s_AllocatedCommandBuffers.clear();
+					s_AllocatedCommandBuffers.resize(g_MainWindowData.ImageCount);
+
 					g_SwapChainRebuild = false;
 				}
 			}
@@ -644,6 +674,11 @@ namespace Walnut {
 			// Present Main Platform Window
 			if (!main_is_minimized)
 				FramePresent(wd);
+
+			float time = GetTime();
+			m_FrameTime = time - m_LastFrameTime;
+			m_TimeStep = glm::min<float>(m_FrameTime, 0.0333f);
+			m_LastFrameTime = time;
 		}
 
 	}
@@ -651,6 +686,11 @@ namespace Walnut {
 	void Application::Close()
 	{
 		m_Running = false;
+	}
+
+	float Application::GetTime()
+	{
+		return (float)glfwGetTime();
 	}
 
 	VkInstance Application::GetInstance()
@@ -724,7 +764,7 @@ namespace Walnut {
 
 	void Application::SubmitResourceFree(std::function<void()>&& func)
 	{
-		s_ResourceFreeQueue.emplace_back(func);
+		s_ResourceFreeQueue[s_CurrentFrameIndex].emplace_back(func);
 	}
 
 }
