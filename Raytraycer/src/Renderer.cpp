@@ -1,13 +1,21 @@
 #include "Renderer.h"
 #include "Walnut/Random.h"
 
+static uint32_t ConvertColorToUInt32(glm::vec4 color)
+{
+	color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
+	color *= 255.0f;
+	return ((uint8_t)color.x) | ((uint8_t)color.y << 8) | ((uint8_t)color.z << 16) | ((uint8_t)color.w << 24);
+}
+
 void Renderer::Render()
 {
 	for (uint32_t y = 0; y < m_FrontBuffer->GetHeight(); y++)
 	{
 		for (uint32_t x = 0; x < m_FrontBuffer->GetWidth(); x++)
 		{
-			m_FrontBufferData[x + y * m_FrontBuffer->GetWidth()] = PerPixel(glm::vec2(x,y));
+			glm::vec4 color = PerPixel(glm::vec2(x, y));
+			m_FrontBufferData[x + y * m_FrontBuffer->GetWidth()] = ConvertColorToUInt32(color);
 		}
 	}
 
@@ -34,7 +42,7 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 
 }
 
-uint32_t Renderer::PerPixel(glm::vec2 PixelCoord)
+glm::vec4 Renderer::PerPixel(glm::vec2 PixelCoord)
 {
 	glm::vec2 coord = glm::vec2(PixelCoord.x / (float)m_FrontBuffer->GetWidth(), PixelCoord.y / (float)m_FrontBuffer->GetHeight());
 
@@ -74,11 +82,11 @@ uint32_t Renderer::PerPixel(glm::vec2 PixelCoord)
 		glm::vec3 hitPos0 = rayOrigin + rayDirection * t0;
 		//glm::vec3 hitPos1 = rayOrigin + rayDirection * t1; // we are only interested in the nearest hit for now
 
-		glm::vec3 normal = spherePosition - hitPos0;
+		glm::vec3 normal = glm::normalize(spherePosition - hitPos0);
 		float shading = glm::clamp(glm::dot(normal, lightDir), 0.0f, 1.0f);
-		return (uint32_t)(shading * 255.0) | 0xff000000;
+		return glm::vec4(shading, shading, shading, 1.0f);
 	}
 
-	return 0xff000000;
+	return glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
