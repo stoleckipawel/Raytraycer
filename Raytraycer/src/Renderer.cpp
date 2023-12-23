@@ -76,7 +76,7 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 		{
 			float hitDistance = (-b - glm::sqrt(discriminant)) / (2.0f * a);//closest
 			//float t1 = (-b + glm::sqrt(discriminant)) / (2 * a);//not needed now
-			if (hitDistance < closestHitDistance)
+			if (hitDistance > 0.0f && hitDistance < closestHitDistance)
 			{
 				closestHitDistance = hitDistance;
 				closestSphere_id = (int)i;
@@ -100,19 +100,34 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
 
-	Renderer::HitPayload payload = TraceRay(ray);
+	glm::vec3 color;
+	float multiplier = 1.0f;
+	int bounces = 3;
+	for (int i = 0; i < bounces; i++)
+	{
+		Renderer::HitPayload payload = TraceRay(ray);
 
-	if (payload.HitDistance == -1.0f)
-	{
-		return glm::vec4(0.3, 0.7, 1.0, 1.0);
+		if (payload.HitDistance == -1.0f)
+		{
+			color += glm::vec3(0.3, 0.7, 1.0) * multiplier * 0.66f;
+			break;
+		}
+		else
+		{
+			glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
+			lightDir = glm::normalize(lightDir);
+			float shading = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
+			color += m_ActiveScene->Spheres[payload.ObjectIndex].Albedo * shading * multiplier;
+		}
+
+		ray.Origin = payload.WorldPosition + payload.WorldNormal * 0.001f;//biased
+		ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal);
+
+		multiplier *= 0.75;
 	}
-	else
-	{
-		glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
-		lightDir = glm::normalize(lightDir);
-		float shading = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
-		return glm::vec4(m_ActiveScene->Spheres[payload.ObjectIndex].Albedo * shading, 1.0f);
-	}
+
+	return glm::vec4(color, 1.0f);
+
 }
 
 Renderer::HitPayload Renderer::ClosestHit(const Ray& ray, uint32_t objectIndex, float hitDistance)

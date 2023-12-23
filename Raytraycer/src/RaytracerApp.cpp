@@ -17,9 +17,9 @@ public:
 	{
 		{
 			Sphere sphere;
-			sphere.Albedo = glm::vec3(0.0f, 1.0f, 0.0f);
-			sphere.Position = glm::vec3(0.0f, 0.0f, 0.0f);
-			sphere.Radius = 0.5;
+			sphere.Albedo = glm::vec3(1.0f, 1.0f, 0.0f);
+			sphere.Position = glm::vec3(-1.0f, 0.0f, 0.0f);
+			sphere.Radius = 0.6;
 			m_Scene.Spheres.push_back(sphere);
 		}
 
@@ -28,6 +28,14 @@ public:
 			sphere.Albedo = glm::vec3(1.0f, 0.0f, 0.0f);
 			sphere.Position = glm::vec3(1.0f, 0.0f, -5.0f);
 			sphere.Radius = 1.5;
+			m_Scene.Spheres.push_back(sphere);
+		}
+
+		{
+			Sphere sphere;
+			sphere.Albedo = glm::vec3(0.5f, 1.0f, 0.0f);
+			sphere.Position = glm::vec3(1.0f, -1002.0f, 0.0f);
+			sphere.Radius = 1000.0f;
 			m_Scene.Spheres.push_back(sphere);
 		}
 	}

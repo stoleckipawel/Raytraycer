@@ -2,6 +2,11 @@
 #include <vector>
 #include "glm/glm.hpp"
 
+struct Material
+{
+
+};
+
 struct Sphere
 {
 	glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
