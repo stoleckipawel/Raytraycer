@@ -13,7 +13,7 @@ public:
 	std::shared_ptr<Walnut::Image> GetFrontBuffer() const { return m_FrontBuffer; }
 	
 private:
-	uint32_t PerPixel(glm::vec2 coord);
+	uint32_t PerPixel(glm::vec2 PixelCoord);
 	std::shared_ptr<Walnut::Image> m_FrontBuffer;
 	uint32_t* m_FrontBufferData = nullptr;
 };
