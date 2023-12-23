@@ -10,20 +10,17 @@ static uint32_t ConvertColorToUInt32(glm::vec4 color)
 
 void Renderer::Render(const Scene& scene, const Camera& camera)
 {
-	if (scene.Spheres.size() == 0.0)
+	m_ActiveCamera = &camera;
+	m_ActiveScene = &scene;
+
+	if (m_ActiveScene->Spheres.size() == 0.0)
 		return;
-	
-	Ray ray;
-	ray.Origin = camera.GetPosition();
 	
 	for (uint32_t y = 0; y < m_FrontBuffer->GetHeight(); y++)
 	{
 		for (uint32_t x = 0; x < m_FrontBuffer->GetWidth(); x++)
 		{
-			ray.Direction = camera.GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
-
-			glm::vec4 color = TraceRay(scene, ray);
-
+			glm::vec4 color = RayGen(x,y);
 			m_FrontBufferData[x + y * m_FrontBuffer->GetWidth()] = ConvertColorToUInt32(color);
 		}
 	}
@@ -51,7 +48,7 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 
 }
 
-glm::vec4 Renderer::TraceRay(const Scene& scene, const Ray& ray)
+Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 {
 	//Ray sphere intersection
 	//bx^2 +by^2)t^2 + (2axbx + 2ayby)t + (ax^2 + ay^2 - r^2) = 0
@@ -59,18 +56,18 @@ glm::vec4 Renderer::TraceRay(const Scene& scene, const Ray& ray)
 	//b = ray direction
 	//r = sphere radius
 
-	const Sphere* closestSphere = nullptr;
+	size_t closestSphere_id = -1;
 	float closestHitDistance = 9999.0;
 
-	for (const Sphere& sphere : scene.Spheres)
+	for (size_t i = 0; i < m_ActiveScene->Spheres.size(); i++)
 	{
+		const Sphere& sphere = m_ActiveScene->Spheres[i];
 		float radiusSquared = sphere.Radius * sphere.Radius;
 		glm::vec3 origin = ray.Origin - sphere.Position;//optimization for sphere placement
 
 		float a = glm::dot(ray.Direction, ray.Direction);
 		float b = glm::dot(origin, ray.Direction) * 2.0f;
 		float c = glm::dot(origin, origin) - radiusSquared;
-
 
 		//Quadriatic formula descriminant
 		// x1 = b^2 - 4ac
@@ -82,25 +79,60 @@ glm::vec4 Renderer::TraceRay(const Scene& scene, const Ray& ray)
 			if (hitDistance < closestHitDistance)
 			{
 				closestHitDistance = hitDistance;
-				closestSphere = &sphere;
+				closestSphere_id = (int)i;
 			}
 		}
 	}
 
-	if (closestSphere == nullptr)
+	if (closestSphere_id == -1)
 	{
-		return glm::vec4(0.15f, 0.65f, 1.0f, 1.0f);
+		return Miss(ray);
 	}
+	else
+	{
+		return ClosestHit(ray, closestSphere_id, closestHitDistance);
+	}
+}
 
-	glm::vec3 origin = ray.Origin - closestSphere->Position;//optimization for sphere placement
-	glm::vec3 closestHitPos = origin + ray.Direction * closestHitDistance;
-	glm::vec3 normal = glm::normalize(closestHitPos);//assumes that each sphere is in the center of the world
-	
+glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
+{
+	Ray ray;
+	ray.Origin = m_ActiveCamera->GetPosition();
+	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
 
-	glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
-	lightDir = glm::normalize(lightDir);
-	float shading = glm::max(glm::dot(normal, -lightDir), 0.0f);
+	Renderer::HitPayload payload = TraceRay(ray);
 
-	return glm::vec4(closestSphere->Albedo * shading, 1.0f);
+	if (payload.HitDistance == -1.0f)
+	{
+		return glm::vec4(0.3, 0.7, 1.0, 1.0);
+	}
+	else
+	{
+		glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
+		lightDir = glm::normalize(lightDir);
+		float shading = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
+		return glm::vec4(m_ActiveScene->Spheres[payload.ObjectIndex].Albedo * shading, 1.0f);
+	}
+}
+
+Renderer::HitPayload Renderer::ClosestHit(const Ray& ray, uint32_t objectIndex, float hitDistance)
+{
+	Renderer::HitPayload payload;
+	payload.HitDistance = hitDistance;
+	payload.ObjectIndex = objectIndex;
+
+	const Sphere& closestSphere = m_ActiveScene->Spheres[objectIndex];
+	glm::vec3 origin = ray.Origin - closestSphere.Position;//optimization for sphere placement
+	payload.WorldPosition = origin + ray.Direction * hitDistance;
+	payload.WorldNormal = glm::normalize(payload.WorldPosition);//assumes that each sphere is in the center of the world
+	payload.WorldPosition += closestSphere.Position;
+	return payload;
+}
+
+Renderer::HitPayload Renderer::Miss(const Ray& ray)
+{
+	Renderer::HitPayload payload;
+	payload.HitDistance = -1.0f;
+	return payload;
 }
 
