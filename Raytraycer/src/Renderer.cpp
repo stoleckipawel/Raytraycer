@@ -8,13 +8,17 @@ static uint32_t ConvertColorToUInt32(glm::vec4 color)
 	return ((uint8_t)color.x) | ((uint8_t)color.y << 8) | ((uint8_t)color.z << 16) | ((uint8_t)color.w << 24);
 }
 
-void Renderer::Render()
+void Renderer::Render(const Camera& camera)
 {
+	Ray ray;
+	ray.Origin = camera.GetPosition();
+	
 	for (uint32_t y = 0; y < m_FrontBuffer->GetHeight(); y++)
 	{
 		for (uint32_t x = 0; x < m_FrontBuffer->GetWidth(); x++)
 		{
-			glm::vec4 color = PerPixel(glm::vec2(x, y));
+			ray.Direction = camera.GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
+			glm::vec4 color = TraceRay(ray);
 			m_FrontBufferData[x + y * m_FrontBuffer->GetWidth()] = ConvertColorToUInt32(color);
 		}
 	}
@@ -42,34 +46,23 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 
 }
 
-glm::vec4 Renderer::PerPixel(glm::vec2 PixelCoord)
+glm::vec4 Renderer::TraceRay(const Ray& ray)
 {
-	glm::vec2 coord = glm::vec2(PixelCoord.x / (float)m_FrontBuffer->GetWidth(), PixelCoord.y / (float)m_FrontBuffer->GetHeight());
-
 	glm::vec3 spherePosition = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 lightDir = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 lightDir = glm::vec3(1.0f, 1.0f, 0.0f);
 
-	float aspectRatio = m_FrontBuffer->GetWidth() / (float)m_FrontBuffer->GetHeight();
+	float radius = 0.5;
+	float radiusSquared = radius * radius;
+
 	//Ray sphere intersection
 	//bx^2 +by^2)t^2 + (2axbx + 2ayby)t + (ax^2 + ay^2 - r^2) = 0
 	//a = ray origin
 	//b = ray direction
 	//r = sphere radius
 
-	glm::vec2 signed_coord;
-	signed_coord.x = coord.x * aspectRatio * 2.0f - 1.0f;
-	signed_coord.y = coord.y * 2.0f - 1.0f;
-
-	glm::vec3 rayDirection = glm::vec3(signed_coord.x, signed_coord.y, -1.0);
-	rayDirection = glm::normalize(rayDirection);
-
-	glm::vec3 rayOrigin = glm::vec3(0.0f, 0.0f, -1.0f);
-	float radius = 0.5;
-	float radiusSquared = radius * radius;
-
-	float a = glm::dot(rayDirection, rayDirection);
-	float b = glm::dot(rayOrigin, rayDirection) * 2.0f;
-	float c = glm::dot(rayOrigin, rayOrigin) - radiusSquared;
+	float a = glm::dot(ray.Direction, ray.Direction);
+	float b = glm::dot(ray.Origin, ray.Direction) * 2.0f;
+	float c = glm::dot(ray.Origin, ray.Origin) - radiusSquared;
 	
 	//Quadriatic formula descriminant
 	// x1 = b^2 - 4ac
@@ -79,12 +72,14 @@ glm::vec4 Renderer::PerPixel(glm::vec2 PixelCoord)
 		float t0 = (-b - glm::sqrt(discriminant)) / (2 * a);
 		float t1 = (-b + glm::sqrt(discriminant)) / (2 * a);
 
-		glm::vec3 hitPos0 = rayOrigin + rayDirection * t0;
+		glm::vec3 hitPos0 = ray.Origin + ray.Direction * t0;
 		//glm::vec3 hitPos1 = rayOrigin + rayDirection * t1; // we are only interested in the nearest hit for now
 
 		glm::vec3 normal = glm::normalize(spherePosition - hitPos0);
 		float shading = glm::clamp(glm::dot(normal, lightDir), 0.0f, 1.0f);
-		return glm::vec4(shading, shading, shading, 1.0f);
+
+		glm::vec3 color = glm::vec3(shading, shading, shading);
+		return glm::vec4(color, 1.0f);
 	}
 
 	return glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
