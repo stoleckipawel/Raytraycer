@@ -18,18 +18,21 @@ public:
 		{
 			Material material;
 			material.Albedo = glm::vec3(0.0f, 1.0f, 0.0f) * 0.5f;
+			material.Roughness = 0.03f;
 			m_Scene.Materials.push_back(material);
 		}
 
 		{
 			Material material;
 			material.Albedo = glm::vec3(1.0f, 0.0f, 0.0f) * 0.5f;
+			material.Roughness = 0.070f;
 			m_Scene.Materials.push_back(material);
 		}
 
 		{
 			Material material;
 			material.Albedo = glm::vec3(1.0f, 1.0f, 1.0f) * 0.5f;
+			material.Roughness = 0.160f;
 			m_Scene.Materials.push_back(material);
 		}
 
@@ -56,6 +59,25 @@ public:
 			sphere.Radius = 1000.0f;
 			m_Scene.Spheres.push_back(sphere);
 		}
+
+		{
+			//moon
+			DirectionalLight directionalLight;
+			directionalLight.Direction = glm::vec3(-0.6f, -0.5f, 1.0f);
+			directionalLight.Color = glm::vec3(0.25, 0.9, 1.0);
+			directionalLight.Intensity = 0.15f;
+			m_Scene.DirectionalLights.push_back(directionalLight);
+		}
+
+		{
+			//sun
+			DirectionalLight directionalLight;
+			directionalLight.Direction = glm::vec3(0.45f, -1.0f, -1.0f);
+			directionalLight.Color = glm::vec3(1.0, 0.9, 0.3);
+			directionalLight.Intensity = 0.75f;
+			m_Scene.DirectionalLights.push_back(directionalLight);
+		}
+		
 	}
 	virtual void OnUpdate(float ts) override
 	{
@@ -77,7 +99,21 @@ public:
 		}
 		ImGui::End();
 
-		ImGui::Begin("Scene");
+		ImGui::Begin("Lights");
+		for (size_t i = 0; i < m_Scene.DirectionalLights.size(); i++)
+		{
+			ImGui::PushID(i);
+
+			DirectionalLight& directionalLight = m_Scene.DirectionalLights[i];
+			ImGui::DragFloat3("Direction", glm::value_ptr(directionalLight.Direction), 0.01f);
+			ImGui::ColorEdit3("Color", glm::value_ptr(directionalLight.Color));
+			ImGui::DragFloat("Intensity", &directionalLight.Intensity, 0.01f);
+			ImGui::Separator();
+			ImGui::PopID();
+		}
+		ImGui::End();
+
+		ImGui::Begin("Geometry");
 		for(size_t i = 0; i < m_Scene.Spheres.size(); i++)
 		{ 
 			ImGui::PushID(i);

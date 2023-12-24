@@ -133,11 +133,11 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
 
-	glm::vec3 lightDir = glm::vec3(0.0f, -1.0f, 0.0f);
+	glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
 	lightDir = glm::normalize(lightDir);
 
 	glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
-	float multiplier = 1.0f;
+	float bounce_multiplier = 1.0f;
 	int bounces = 4;
 	for (int i = 0; i < bounces; i++)
 	{
@@ -145,7 +145,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 
 		if (payload.HitDistance == -1.0f)
 		{
-			color += glm::vec3(0.3, 0.7, 1.0) * multiplier;
+			color += glm::vec3(0.3, 0.7, 1.0) * bounce_multiplier;
 			break;
 		}
 		else
@@ -153,15 +153,22 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 			const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
 			const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
 			
-			//SunLight
-			Ray directSunRay;
-			directSunRay.Origin = payload.WorldPosition - (lightDir * FLT_MIN);
-			directSunRay.Direction = -lightDir;
-			Renderer::HitPayload sunRayPayload = TraceRay(directSunRay);
-			if (sunRayPayload.HitDistance == -1.0)//if there are no blockers
+			for (int i = 0; i < m_ActiveScene->DirectionalLights.size(); i++)
 			{
-				float shading = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
-				color += material.Albedo * shading * multiplier;
+				const DirectionalLight& directionalLight = m_ActiveScene->DirectionalLights[i];
+				glm::vec3 lightDir = glm::normalize(directionalLight.Direction);
+
+				Ray directSunRay;
+				directSunRay.Origin = payload.WorldPosition - (lightDir * FLT_MIN);
+				directSunRay.Direction = -lightDir;
+				Renderer::HitPayload sunRayPayload = TraceRay(directSunRay);
+				if (sunRayPayload.HitDistance == -1.0)//if there are no blockers
+				{
+					float NoL = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
+					glm::vec3 lightColor = directionalLight.Color;
+					float lightIntensity = directionalLight.Intensity;
+					color += material.Albedo * lightColor * lightIntensity * NoL * bounce_multiplier;
+				}
 			}
 		}
 
@@ -172,7 +179,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 		ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal + 
 			material.Roughness * Walnut::Random::Vec3(-0.5f,0.5f));
 
-		multiplier *= 0.4f;
+		bounce_multiplier *= 0.333f;
 	}
 
 	return glm::vec4(color, 1.0f);
