@@ -16,8 +16,26 @@ public:
 		: m_Camera(45.0f, 0.0001f, 1000.0f)
 	{
 		{
+			Material material;
+			material.Albedo = glm::vec3(0.0f, 1.0f, 0.0f);
+			m_Scene.Materials.push_back(material);
+		}
+
+		{
+			Material material;
+			material.Albedo = glm::vec3(1.0f, 0.0f, 0.0f);
+			m_Scene.Materials.push_back(material);
+		}
+
+		{
+			Material material;
+			material.Albedo = glm::vec3(1.0f, 0.0f, 1.0f);
+			m_Scene.Materials.push_back(material);
+		}
+
+		{
 			Sphere sphere;
-			sphere.Albedo = glm::vec3(1.0f, 1.0f, 0.0f);
+			sphere.MaterialIndex = 0;
 			sphere.Position = glm::vec3(-1.0f, 0.0f, 0.0f);
 			sphere.Radius = 0.6;
 			m_Scene.Spheres.push_back(sphere);
@@ -25,7 +43,7 @@ public:
 
 		{
 			Sphere sphere;
-			sphere.Albedo = glm::vec3(1.0f, 0.0f, 0.0f);
+			sphere.MaterialIndex = 1;
 			sphere.Position = glm::vec3(1.0f, 0.0f, -5.0f);
 			sphere.Radius = 1.5;
 			m_Scene.Spheres.push_back(sphere);
@@ -33,7 +51,7 @@ public:
 
 		{
 			Sphere sphere;
-			sphere.Albedo = glm::vec3(0.5f, 1.0f, 0.0f);
+			sphere.MaterialIndex = 2;
 			sphere.Position = glm::vec3(1.0f, -1002.0f, 0.0f);
 			sphere.Radius = 1000.0f;
 			m_Scene.Spheres.push_back(sphere);
@@ -47,10 +65,6 @@ public:
 	{
 		ImGui::Begin("Settings");
 		ImGui::Text("Last Render Time: %.3fms", m_LastRenderTime);
-		if (ImGui::Button("Render"))
-		{
-			Render();
-		};
 		ImGui::End();
 
 		ImGui::Begin("Scene");
@@ -61,7 +75,23 @@ public:
 			Sphere& sphere = m_Scene.Spheres[i];
 			ImGui::DragFloat3("Position", glm::value_ptr(sphere.Position), 0.01f);
 			ImGui::DragFloat("Radius", &sphere.Radius, 0.01f);
-			ImGui::ColorEdit3("Albedo", glm::value_ptr(sphere.Albedo));
+			ImGui::DragInt("MaterialIndex", &sphere.MaterialIndex, 1.0f, 0.0f, m_Scene.Materials.size());
+
+			ImGui::Separator();
+			ImGui::PopID();
+		}
+		ImGui::End();
+
+		ImGui::Begin("Materials");
+		for (size_t i = 0; i < m_Scene.Materials.size(); i++)
+		{
+			ImGui::PushID(i);
+			Material& material = m_Scene.Materials[i];
+			ImGui::ColorEdit3("Albedo", glm::value_ptr(material.Albedo));
+			ImGui::ColorEdit3("Emmisive", glm::value_ptr(material.Emmisive));
+			ImGui::DragFloat("Metalic", &material.Metalic, 1.0f, 0.0f, 1.0f);
+			ImGui::DragFloat("Specular", &material.Specular, 0.01f);
+			ImGui::DragFloat("Roughness", &material.Roughness, 0.01f, 0.0f, 1.0f);
 			ImGui::Separator();
 			ImGui::PopID();
 		}

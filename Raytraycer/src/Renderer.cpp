@@ -96,13 +96,17 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 
 glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 {
+	
 	Ray ray;
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
 
-	glm::vec3 color;
+	glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
+	lightDir = glm::normalize(lightDir);
+
+	glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
 	float multiplier = 1.0f;
-	int bounces = 3;
+	int bounces = 4;
 	for (int i = 0; i < bounces; i++)
 	{
 		Renderer::HitPayload payload = TraceRay(ray);
@@ -114,16 +118,21 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 		}
 		else
 		{
-			glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
-			lightDir = glm::normalize(lightDir);
+			const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
+			const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
+			
 			float shading = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
-			color += m_ActiveScene->Spheres[payload.ObjectIndex].Albedo * shading * multiplier;
+			color += material.Albedo * shading * multiplier;
 		}
 
 		ray.Origin = payload.WorldPosition + payload.WorldNormal * 0.001f;//biased
-		ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal);
 
-		multiplier *= 0.75;
+		const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
+		const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
+		ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal + 
+			material.Roughness * Walnut::Random::Vec3(-0.5f,0.5f));
+
+		multiplier *= 0.4;
 	}
 
 	return glm::vec4(color, 1.0f);
