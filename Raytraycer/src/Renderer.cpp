@@ -133,7 +133,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
 
-	glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
+	glm::vec3 lightDir = glm::vec3(0.0f, -1.0f, 0.0f);
 	lightDir = glm::normalize(lightDir);
 
 	glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -145,7 +145,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 
 		if (payload.HitDistance == -1.0f)
 		{
-			color += glm::vec3(0.3, 0.7, 1.0) * multiplier * 0.66f;
+			color += glm::vec3(0.3, 0.7, 1.0) * multiplier;
 			break;
 		}
 		else
@@ -153,11 +153,19 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 			const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
 			const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
 			
-			float shading = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
-			color += material.Albedo * shading * multiplier;
+			//SunLight
+			Ray directSunRay;
+			directSunRay.Origin = payload.WorldPosition - (lightDir * FLT_MIN);
+			directSunRay.Direction = -lightDir;
+			Renderer::HitPayload sunRayPayload = TraceRay(directSunRay);
+			if (sunRayPayload.HitDistance == -1.0)//if there are no blockers
+			{
+				float shading = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
+				color += material.Albedo * shading * multiplier;
+			}
 		}
 
-		ray.Origin = payload.WorldPosition + payload.WorldNormal * 0.001f;//biased
+		ray.Origin = payload.WorldPosition + payload.WorldNormal * FLT_MIN;//biased
 
 		const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
 		const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
