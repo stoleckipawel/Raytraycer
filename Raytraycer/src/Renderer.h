@@ -49,5 +49,8 @@ private:
 
 	glm::vec4* m_HistoryBufferData = nullptr;
 	uint32_t m_FrameIndex = 1;
+
+	std::vector<uint32_t> m_HorizontalPixelsIterator;
+	std::vector<uint32_t> m_VerticalPixelsIterator;
 };
 

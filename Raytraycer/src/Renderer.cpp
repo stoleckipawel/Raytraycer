@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "Walnut/Random.h"
+#include <execution>
 
 static uint32_t ConvertColorToUInt32(glm::vec4 color)
 {
@@ -18,17 +19,19 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 	
 	if (m_FrameIndex == 1)
 		memset(m_HistoryBufferData, 0, m_FrontBuffer->GetWidth() * m_FrontBuffer->GetHeight() * sizeof(glm::vec4));//clear buffer
-	
-	for (uint32_t y = 0; y < m_FrontBuffer->GetHeight(); y++)
-	{
-		for (uint32_t x = 0; x < m_FrontBuffer->GetWidth(); x++)
+
+	std::for_each(std::execution::par, m_VerticalPixelsIterator.begin(), m_VerticalPixelsIterator.end(), 
+		[this](uint32_t y) 
 		{
-			uint32_t pixel_id = x + y * m_FrontBuffer->GetWidth();
-			m_HistoryBufferData[pixel_id] += RayGen(x, y);
-			glm::vec4 accumulated_color = m_HistoryBufferData[pixel_id] / (float)m_FrameIndex;
-			m_FrontBufferData[pixel_id] = ConvertColorToUInt32(accumulated_color);
-		}
-	}
+			std::for_each(std::execution::par, m_HorizontalPixelsIterator.begin(), m_HorizontalPixelsIterator.end(),
+			[this, y](uint32_t x)
+			{
+				uint32_t pixel_id = x + y * m_FrontBuffer->GetWidth();
+				m_HistoryBufferData[pixel_id] += RayGen(x, y);
+				glm::vec4 accumulated_color = m_HistoryBufferData[pixel_id] / (float)m_FrameIndex;
+				m_FrontBufferData[pixel_id] = ConvertColorToUInt32(accumulated_color);
+			});
+		});
 
 	m_FrontBuffer->SetData(m_FrontBufferData);
 
@@ -63,7 +66,18 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 	delete[] m_HistoryBufferData;
 	m_HistoryBufferData = new glm::vec4[width * height];
 
-	uint32_t m_FrameIndex;
+	m_FrameIndex = 1;
+
+	m_VerticalPixelsIterator.resize(height);
+	for (uint32_t i = 0; i < height; i++)
+	{
+		m_VerticalPixelsIterator[i] = i;
+	}
+	m_HorizontalPixelsIterator.resize(width);
+	for (uint32_t i = 0; i < width; i++)
+	{
+		m_HorizontalPixelsIterator[i] = i;
+	}
 }
 
 Renderer::HitPayload Renderer::TraceRay(const Ray& ray)

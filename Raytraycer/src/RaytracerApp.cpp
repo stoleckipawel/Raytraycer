@@ -44,7 +44,7 @@ public:
 		{
 			Sphere sphere;
 			sphere.MaterialIndex = 1;
-			sphere.Position = glm::vec3(1.0f, 0.0f, -5.0f);
+			sphere.Position = glm::vec3(1.0f, -0.470f, -5.0f);
 			sphere.Radius = 1.5;
 			m_Scene.Spheres.push_back(sphere);
 		}
