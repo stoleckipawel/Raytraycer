@@ -89,7 +89,7 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 	//r = sphere radius
 
 	size_t closestSphere_id = -1;
-	float closestHitDistance = 9999.0;
+	float closestHitDistance = std::numeric_limits<float>::max();
 
 	for (size_t i = 0; i < m_ActiveScene->Spheres.size(); i++)
 	{
@@ -126,65 +126,85 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 	}
 }
 
+glm::vec3 Renderer::SampleFallback(const Ray& ray)
+{
+	glm::vec3 sky = glm::vec3(0.7f, 0.8f, 1.0f);
+	glm::vec3 ground_albedo = glm::vec3(0.31f, 0.31f, 0.31f);
+
+	//Compute ground shading assuming it's point up and is only lit with directional light
+	glm::vec3 ground = glm::vec3(0.0f, 0.0f, 0.0f);
+	for (int i = 0; i < m_ActiveScene->DirectionalLights.size(); i++)
+	{
+		const DirectionalLight& directionalLight = m_ActiveScene->DirectionalLights[i];
+		glm::vec3 lightDir = glm::normalize(directionalLight.Direction);
+		float NoL = glm::max(glm::dot(glm::vec3(0.0f, 1.0f, 0.0f), -lightDir), 0.0f);
+		glm::vec3 lightColor = directionalLight.Color;
+		float lightIntensity = directionalLight.Intensity;
+		ground += lightColor * lightIntensity * NoL * ground_albedo;
+	}
+
+	float sky_opacity = ray.Direction.y * 0.5f + 0.5f;
+	return ground * (1.0f - sky_opacity) + sky * sky_opacity;//lerp
+}
+
 glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 {
 	Ray ray;
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
 
-	glm::vec3 color_sum = glm::vec3(0.0f, 0.0f, 0.0f);
-	float bounce_multiplier = 1.0f;
-	int bounces = 4;
+	glm::vec3 light_sum = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 hit_contribution = glm::vec3(1.0f, 1.0f, 1.0f);
+
+	int bounces = 5;
 	for (int i = 0; i < bounces; i++)
 	{
+		glm::vec3 light = glm::vec3(0.0f, 0.0f, 0.0f);
+
 		Renderer::HitPayload payload = TraceRay(ray);
 
-		if (payload.HitDistance == -1.0f)
+		if (payload.HitDistance < 0.0f)//Sky hit
 		{
-			color_sum += glm::vec3(0.3, 0.7, 1.0) * bounce_multiplier;
+			light_sum += SampleFallback(ray) * hit_contribution;
 			break;
 		}
-		else
+
+		//Evaluate Directional Lights
+		for (int i = 0; i < m_ActiveScene->DirectionalLights.size(); i++)
 		{
-			const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
-			const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
-			
-			for (int i = 0; i < m_ActiveScene->DirectionalLights.size(); i++)
+			const DirectionalLight& directionalLight = m_ActiveScene->DirectionalLights[i];
+			glm::vec3 lightDir = glm::normalize(directionalLight.Direction);
+
+			Ray directSunRay;
+			directSunRay.Origin = payload.WorldPosition - (lightDir * 0.01f);
+			directSunRay.Direction = -lightDir;
+			Renderer::HitPayload sunRayPayload = TraceRay(directSunRay);
+			if (sunRayPayload.HitDistance == -1.0)//if there are no blockers
 			{
-				glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
-
-				const DirectionalLight& directionalLight = m_ActiveScene->DirectionalLights[i];
-				glm::vec3 lightDir = glm::normalize(directionalLight.Direction);
-
-				Ray directSunRay;
-				directSunRay.Origin = payload.WorldPosition - (lightDir * FLT_MIN);
-				directSunRay.Direction = -lightDir;
-				Renderer::HitPayload sunRayPayload = TraceRay(directSunRay);
-				if (sunRayPayload.HitDistance == -1.0)//if there are no blockers
-				{
-					float NoL = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
-					glm::vec3 lightColor = directionalLight.Color;
-					float lightIntensity = directionalLight.Intensity;
-					color += (material.Albedo * lightColor * lightIntensity * NoL);
-				}
-
-				color += material.Emmisive;
-				color_sum += color * bounce_multiplier;
+				float NoL = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
+				glm::vec3 lightColor = directionalLight.Color;
+				float lightIntensity = directionalLight.Intensity;
+				light += lightColor * lightIntensity * NoL;
 			}
 		}
 
-		ray.Origin = payload.WorldPosition + payload.WorldNormal * FLT_MIN;//biased
-
+		//Shaded point properties
 		const Sphere& sphere = m_ActiveScene->Spheres[payload.ObjectIndex];
 		const Material& material = m_ActiveScene->Materials[sphere.MaterialIndex];
-		ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal + 
-			material.Roughness * Walnut::Random::Vec3(-0.5f,0.5f));
 
-		bounce_multiplier *= 0.333f;
+		light_sum += material.Emmisive * hit_contribution;
+
+		hit_contribution *= material.Albedo;
+		light_sum += light * hit_contribution;
+
+		//Set New Ray properties for next bounce
+		ray.Origin = payload.WorldPosition + payload.WorldNormal * 0.01f;//biased
+		glm::vec3 cone = Walnut::Random::Vec3(-0.5f, 0.5f) * material.Roughness;
+		ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal + cone);
+
 	}
 
-	return glm::vec4(color_sum, 1.0f);
-
+	return glm::vec4(light_sum, 1.0f);
 }
 
 Renderer::HitPayload Renderer::ClosestHit(const Ray& ray, uint32_t objectIndex, float hitDistance)

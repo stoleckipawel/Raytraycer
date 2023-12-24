@@ -36,6 +36,7 @@ private:
 private:
 
 	HitPayload TraceRay(const Ray& ray);
+	glm::vec3 SampleFallback(const Ray& ray);
 	glm::vec4 RayGen(uint32_t x, uint32_t y);
 	HitPayload ClosestHit(const Ray& ray, uint32_t objectIndex, float hitDistance);
 	HitPayload Miss(const Ray& ray);
