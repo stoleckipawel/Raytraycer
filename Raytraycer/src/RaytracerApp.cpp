@@ -37,6 +37,14 @@ public:
 		}
 
 		{
+			Material material;
+			material.Albedo = glm::vec3(1.0f, 1.0f, 1.0f) * 0.65f;
+			material.Emmisive = glm::vec3(0.3f, 0.3f, 0.3f);
+			material.Roughness = 0.2f;
+			m_Scene.Materials.push_back(material);
+		}
+
+		{
 			Sphere sphere;
 			sphere.MaterialIndex = 0;
 			sphere.Position = glm::vec3(-1.0f, 0.0f, 0.0f);
@@ -57,6 +65,14 @@ public:
 			sphere.MaterialIndex = 2;
 			sphere.Position = glm::vec3(1.0f, -1002.0f, 0.0f);
 			sphere.Radius = 1000.0f;
+			m_Scene.Spheres.push_back(sphere);
+		}
+
+		{
+			Sphere sphere;
+			sphere.MaterialIndex = 3;
+			sphere.Position = glm::vec3(16.0f, 2.0f, -52.0f);
+			sphere.Radius = 20.0f;
 			m_Scene.Spheres.push_back(sphere);
 		}
 

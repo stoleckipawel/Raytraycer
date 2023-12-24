@@ -128,15 +128,11 @@ Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
 
 glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 {
-	
 	Ray ray;
 	ray.Origin = m_ActiveCamera->GetPosition();
 	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
 
-	glm::vec3 lightDir = glm::vec3(-1.0f, -1.0f, -1.0f);
-	lightDir = glm::normalize(lightDir);
-
-	glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 color_sum = glm::vec3(0.0f, 0.0f, 0.0f);
 	float bounce_multiplier = 1.0f;
 	int bounces = 4;
 	for (int i = 0; i < bounces; i++)
@@ -145,7 +141,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 
 		if (payload.HitDistance == -1.0f)
 		{
-			color += glm::vec3(0.3, 0.7, 1.0) * bounce_multiplier;
+			color_sum += glm::vec3(0.3, 0.7, 1.0) * bounce_multiplier;
 			break;
 		}
 		else
@@ -155,6 +151,8 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 			
 			for (int i = 0; i < m_ActiveScene->DirectionalLights.size(); i++)
 			{
+				glm::vec3 color = glm::vec3(0.0f, 0.0f, 0.0f);
+
 				const DirectionalLight& directionalLight = m_ActiveScene->DirectionalLights[i];
 				glm::vec3 lightDir = glm::normalize(directionalLight.Direction);
 
@@ -167,8 +165,11 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 					float NoL = glm::max(glm::dot(payload.WorldNormal, -lightDir), 0.0f);
 					glm::vec3 lightColor = directionalLight.Color;
 					float lightIntensity = directionalLight.Intensity;
-					color += material.Albedo * lightColor * lightIntensity * NoL * bounce_multiplier;
+					color += (material.Albedo * lightColor * lightIntensity * NoL);
 				}
+
+				color += material.Emmisive;
+				color_sum += color * bounce_multiplier;
 			}
 		}
 
@@ -182,7 +183,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 		bounce_multiplier *= 0.333f;
 	}
 
-	return glm::vec4(color, 1.0f);
+	return glm::vec4(color_sum, 1.0f);
 
 }
 
