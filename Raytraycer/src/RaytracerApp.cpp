@@ -59,7 +59,10 @@ public:
 	}
 	virtual void OnUpdate(float ts) override
 	{
-		m_Camera.OnUpdate(ts);
+		if (m_Camera.OnUpdate(ts))
+		{
+			m_Renderer.Reset();
+		};
 	}
 	virtual void OnUIRender() override
 	{

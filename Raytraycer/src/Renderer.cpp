@@ -17,7 +17,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 		return;
 	
 	if (m_FrameIndex == 1)
-		memset(m_HistoryBufferData, 0, m_FrontBuffer->GetWidth() * m_FrontBuffer->GetHeight() * sizeof(glm::vec3));//clear buffer
+		memset(m_HistoryBufferData, 0, m_FrontBuffer->GetWidth() * m_FrontBuffer->GetHeight() * sizeof(glm::vec4));//clear buffer
 	
 	for (uint32_t y = 0; y < m_FrontBuffer->GetHeight(); y++)
 	{

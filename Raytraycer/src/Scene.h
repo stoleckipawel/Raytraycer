@@ -15,7 +15,7 @@ struct Sphere
 {
 	glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
 	float Radius = 0.5f;
-	int MaterialIndex;
+	int MaterialIndex = 0;
 };
 
 struct Scene
