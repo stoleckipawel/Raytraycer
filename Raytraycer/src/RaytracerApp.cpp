@@ -29,7 +29,7 @@ public:
 
 		{
 			Material material;
-			material.Albedo = glm::vec3(1.0f, 0.0f, 1.0f);
+			material.Albedo = glm::vec3(1.0f, 1.0f, 1.0f);
 			m_Scene.Materials.push_back(material);
 		}
 
@@ -65,6 +65,13 @@ public:
 	{
 		ImGui::Begin("Settings");
 		ImGui::Text("Last Render Time: %.3fms", m_LastRenderTime);
+		ImGui::Text("Frame Index: %.i", m_Renderer.GetFrameIndex());
+		ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
+		
+		if (ImGui::Button("Reset"))
+		{
+			m_Renderer.Reset();
+		}
 		ImGui::End();
 
 		ImGui::Begin("Scene");

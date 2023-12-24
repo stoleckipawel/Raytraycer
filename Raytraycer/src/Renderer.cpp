@@ -16,16 +16,30 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 	if (m_ActiveScene->Spheres.size() == 0.0)
 		return;
 	
+	if (m_FrameIndex == 1)
+		memset(m_HistoryBufferData, 0, m_FrontBuffer->GetWidth() * m_FrontBuffer->GetHeight() * sizeof(glm::vec3));//clear buffer
+	
 	for (uint32_t y = 0; y < m_FrontBuffer->GetHeight(); y++)
 	{
 		for (uint32_t x = 0; x < m_FrontBuffer->GetWidth(); x++)
 		{
-			glm::vec4 color = RayGen(x,y);
-			m_FrontBufferData[x + y * m_FrontBuffer->GetWidth()] = ConvertColorToUInt32(color);
+			uint32_t pixel_id = x + y * m_FrontBuffer->GetWidth();
+			m_HistoryBufferData[pixel_id] += RayGen(x, y);
+			glm::vec4 accumulated_color = m_HistoryBufferData[pixel_id] / (float)m_FrameIndex;
+			m_FrontBufferData[pixel_id] = ConvertColorToUInt32(accumulated_color);
 		}
 	}
 
 	m_FrontBuffer->SetData(m_FrontBufferData);
+
+	if (m_Settings.Accumulate)
+	{
+		m_FrameIndex++;
+	}
+	else
+	{
+		m_FrameIndex = 1;
+	}
 }
 
 void Renderer::OnResize(uint32_t width, uint32_t height)
@@ -46,6 +60,10 @@ void Renderer::OnResize(uint32_t width, uint32_t height)
 	delete[] m_FrontBufferData;
 	m_FrontBufferData = new uint32_t[width * height];
 
+	delete[] m_HistoryBufferData;
+	m_HistoryBufferData = new glm::vec4[width * height];
+
+	uint32_t m_FrameIndex;
 }
 
 Renderer::HitPayload Renderer::TraceRay(const Ray& ray)
@@ -132,7 +150,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 		ray.Direction = glm::reflect(ray.Direction, payload.WorldNormal + 
 			material.Roughness * Walnut::Random::Vec3(-0.5f,0.5f));
 
-		multiplier *= 0.4;
+		multiplier *= 0.4f;
 	}
 
 	return glm::vec4(color, 1.0f);
