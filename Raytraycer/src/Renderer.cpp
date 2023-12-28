@@ -83,38 +83,11 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 	}
 }
 
-Trace Renderer::TraceScene(const Ray& ray)
-{
-	Trace best_trace = Trace();
-	for (uint32_t i = 0; i < m_ActiveScene->Primitives.size(); i++)
-	{
-		const Primitive* primitive = m_ActiveScene->Primitives[i].get();
-		Trace trace = primitive->TraceRay(ray);
-		if (trace.Result == TraceResult::Hit)
-		{
-			if (trace.HitDistance > 0.0f && trace.HitDistance < best_trace.HitDistance)
-			{
-				best_trace = trace;
-			};
-		}
-	}
-
-	if (best_trace.Result == TraceResult::Hit)
-	{
-		const Primitive* primitive = m_ActiveScene->Primitives[best_trace.PrimitiveId].get();
-		return primitive->ResolveTrace(best_trace, ray);
-	}
-	else
-	{
-		return best_trace.Miss();
-	}
-}
-
 glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 {
 	Ray ray;
 	ray.Origin = m_ActiveCamera->GetPosition();
-	ray.Direction = m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()];
+	ray.Direction = glm::normalize(m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()]);
 
 	glm::vec3 light_sum = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 hit_contribution = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -159,6 +132,33 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 	}
 
 	return glm::vec4(light_sum, 1.0f);
+}
+
+Trace Renderer::TraceScene(const Ray& ray)
+{
+	Trace best_trace = Trace();
+	for (uint32_t i = 0; i < m_ActiveScene->Primitives.size(); i++)
+	{
+		const Primitive* primitive = m_ActiveScene->Primitives[i].get();
+		Trace trace = primitive->TraceRay(ray);
+		if (trace.Result == TraceResult::Hit)
+		{
+			if (trace.HitDistance > 0.0f && trace.HitDistance < best_trace.HitDistance)
+			{
+				best_trace = trace;
+			};
+		}
+	}
+
+	if (best_trace.Result == TraceResult::Hit)
+	{
+		const Primitive* primitive = m_ActiveScene->Primitives[best_trace.PrimitiveId].get();
+		return primitive->ResolveTracePayload(best_trace, ray);
+	}
+	else
+	{
+		return best_trace.Miss();
+	}
 }
 
 glm::vec3 Renderer::SampleFallback(const Ray& ray)

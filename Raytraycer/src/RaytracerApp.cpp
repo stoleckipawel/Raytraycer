@@ -46,19 +46,12 @@ void RaytraycerApp::RegisterPrimitives()
 	sphere_red->Position = glm::vec3(1.0f, -0.470f, -5.0f);
 	sphere_red->Radius = 1.5;
 	m_Scene.Primitives.push_back(std::move(sphere_red));
-
-	std::unique_ptr<Sphere> sphere_white = std::make_unique<Sphere>();
-	sphere_white->Material = &m_Materials[2];
-	sphere_white->Position = glm::vec3(1.0f, -1002.0f, 0.0f);
-	sphere_white->Radius = 1000.0f;
-	m_Scene.Primitives.push_back(std::move(sphere_white));
 	
 	std::unique_ptr<Sphere> sphere_emmisive = std::make_unique<Sphere>();
 	sphere_emmisive->Material = &m_Materials[3];
 	sphere_emmisive->Position = glm::vec3(16.0f, 2.0f, -52.0f);
 	sphere_emmisive->Radius = 20.0f;
-	m_Scene.Primitives.push_back(std::move(sphere_emmisive));
-	
+	m_Scene.Primitives.push_back(std::move(sphere_emmisive));	
 }
 
 void RaytraycerApp::RegisterLights()
