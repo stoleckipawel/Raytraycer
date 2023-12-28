@@ -1,200 +1,152 @@
-#include "Walnut/Application.h"
-#include "Walnut/EntryPoint.h"
-#include "Camera.h"
-#include "Walnut/Timer.h"
-#include "Walnut/Image.h"
-#include "Renderer.h"
-#include "Scene.h"
-#include "glm/gtc/type_ptr.hpp"
+#include "RaytraycerApp.h"
 
-using namespace Walnut;
-
-class ExampleLayer : public Layer
+RaytraycerApp::RaytraycerApp()
+	: m_Camera(45.0f, 0.0001f, 1000.0f)
 {
-public:
-	ExampleLayer()
-		: m_Camera(45.0f, 0.0001f, 1000.0f)
+	RegisterMaterials();
+	RegisterPrimitives();
+	RegisterLights();
+}
+
+void RaytraycerApp::RegisterMaterials()
+{
+	Material material_green;
+	material_green.Albedo = glm::vec3(0.0f, 1.0f, 0.0f) * 0.5f;
+	material_green.Roughness = 0.03f;
+	m_Materials.push_back(material_green);
+	
+	Material material_red;
+	material_red.Albedo = glm::vec3(1.0f, 0.0f, 0.0f) * 0.5f;
+	material_red.Roughness = 0.070f;
+	m_Materials.push_back(material_red);
+
+	Material material_white;
+	material_white.Albedo = glm::vec3(1.0f, 1.0f, 1.0f) * 0.5f;
+	material_white.Roughness = 0.160f;
+	m_Materials.push_back(material_white);
+
+	Material material_emmisive;
+	material_emmisive.Albedo = glm::vec3(1.0f, 1.0f, 1.0f) * 0.5f;
+	material_emmisive.Emmisive = glm::vec3(0.3f, 0.3f, 0.3f);
+	material_emmisive.Roughness = 0.2f;
+	m_Materials.push_back(material_emmisive);
+	
+}
+
+void RaytraycerApp::RegisterPrimitives()
+{
+	std::unique_ptr<Sphere> sphere_green = std::make_unique<Sphere>();
+	sphere_green->Material = &m_Materials[0];
+	sphere_green->Position = glm::vec3(-1.0f, 0.0f, 0.0f);
+	sphere_green->Radius = 0.6f;
+	m_Scene.Primitives.push_back(std::move(sphere_green));
+
+	std::unique_ptr<Sphere> sphere_red = std::make_unique<Sphere>();
+	sphere_red->Material = &m_Materials[1];
+	sphere_red->Position = glm::vec3(1.0f, -0.470f, -5.0f);
+	sphere_red->Radius = 1.5;
+	m_Scene.Primitives.push_back(std::move(sphere_red));
+
+	std::unique_ptr<Sphere> sphere_white = std::make_unique<Sphere>();
+	sphere_white->Material = &m_Materials[2];
+	sphere_white->Position = glm::vec3(1.0f, -1002.0f, 0.0f);
+	sphere_white->Radius = 1000.0f;
+	m_Scene.Primitives.push_back(std::move(sphere_white));
+	
+	std::unique_ptr<Sphere> sphere_emmisive = std::make_unique<Sphere>();
+	sphere_emmisive->Material = &m_Materials[3];
+	sphere_emmisive->Position = glm::vec3(16.0f, 2.0f, -52.0f);
+	sphere_emmisive->Radius = 20.0f;
+	m_Scene.Primitives.push_back(std::move(sphere_emmisive));
+	
+}
+
+void RaytraycerApp::RegisterLights()
+{
+	std::unique_ptr<DirectionalLight> moon = std::make_unique<DirectionalLight>();
+	moon->Direction = glm::vec3(0.6f, 0.5f, -1.0f);
+	moon->Color = glm::vec3(0.25, 0.9, 1.0);
+	moon->Intensity = 0.2f;
+	m_Scene.Lights.push_back(std::move(moon));
+
+	std::unique_ptr<DirectionalLight> sun = std::make_unique<DirectionalLight>();
+	sun->Direction = glm::vec3(-0.45f, 1.0f, 1.0f);
+	sun->Color = glm::vec3(1.0, 0.9, 0.3);
+	sun->Intensity = 0.75f;
+	m_Scene.Lights.push_back(std::move(sun));
+}
+
+void RaytraycerApp::OnUpdate(float ts)
+{
+	if (m_Camera.OnUpdate(ts))
 	{
-		{
-			Material material;
-			material.Albedo = glm::vec3(0.0f, 1.0f, 0.0f) * 0.5f;
-			material.Roughness = 0.03f;
-			m_Scene.Materials.push_back(material);
-		}
+		m_Renderer.Reset();
+	};
+}
 
-		{
-			Material material;
-			material.Albedo = glm::vec3(1.0f, 0.0f, 0.0f) * 0.5f;
-			material.Roughness = 0.070f;
-			m_Scene.Materials.push_back(material);
-		}
-
-		{
-			Material material;
-			material.Albedo = glm::vec3(1.0f, 1.0f, 1.0f) * 0.5f;
-			material.Roughness = 0.160f;
-			m_Scene.Materials.push_back(material);
-		}
-
-		{
-			Material material;
-			material.Albedo = glm::vec3(1.0f, 1.0f, 1.0f) * 0.65f;
-			material.Emmisive = glm::vec3(0.3f, 0.3f, 0.3f);
-			material.Roughness = 0.2f;
-			m_Scene.Materials.push_back(material);
-		}
-
-		{
-			Sphere sphere;
-			sphere.MaterialIndex = 0;
-			sphere.Position = glm::vec3(-1.0f, 0.0f, 0.0f);
-			sphere.Radius = 0.6;
-			m_Scene.Spheres.push_back(sphere);
-		}
-
-		{
-			Sphere sphere;
-			sphere.MaterialIndex = 1;
-			sphere.Position = glm::vec3(1.0f, -0.470f, -5.0f);
-			sphere.Radius = 1.5;
-			m_Scene.Spheres.push_back(sphere);
-		}
-
-		{
-			Sphere sphere;
-			sphere.MaterialIndex = 2;
-			sphere.Position = glm::vec3(1.0f, -1002.0f, 0.0f);
-			sphere.Radius = 1000.0f;
-			m_Scene.Spheres.push_back(sphere);
-		}
-
-		{
-			Sphere sphere;
-			sphere.MaterialIndex = 3;
-			sphere.Position = glm::vec3(16.0f, 2.0f, -52.0f);
-			sphere.Radius = 20.0f;
-			m_Scene.Spheres.push_back(sphere);
-		}
-
-		{
-			//moon
-			DirectionalLight directionalLight;
-			directionalLight.Direction = glm::vec3(-0.6f, -0.5f, 1.0f);
-			directionalLight.Color = glm::vec3(0.25, 0.9, 1.0);
-			directionalLight.Intensity = 0.15f;
-			m_Scene.DirectionalLights.push_back(directionalLight);
-		}
-
-		{
-			//sun
-			DirectionalLight directionalLight;
-			directionalLight.Direction = glm::vec3(0.45f, -1.0f, -1.0f);
-			directionalLight.Color = glm::vec3(1.0, 0.9, 0.3);
-			directionalLight.Intensity = 0.75f;
-			m_Scene.DirectionalLights.push_back(directionalLight);
-		}
+void RaytraycerApp::OnUIRender()
+{
+	ImGui::Begin("Settings");
+	ImGui::Text("Last Render Time: %.3fms", m_LastRenderTime);
+	ImGui::Text("Frame Index: %.i", m_Renderer.GetFrameIndex());
+	ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
 		
-	}
-	virtual void OnUpdate(float ts) override
+	if (ImGui::Button("Reset"))
 	{
-		if (m_Camera.OnUpdate(ts))
-		{
-			m_Renderer.Reset();
-		};
+		m_Renderer.Reset();
 	}
-	virtual void OnUIRender() override
+	ImGui::End();
+
+	ImGui::Begin("Lights");
+	for (int32_t i = 0; i < m_Scene.Lights.size(); i++)
 	{
-		ImGui::Begin("Settings");
-		ImGui::Text("Last Render Time: %.3fms", m_LastRenderTime);
-		ImGui::Text("Frame Index: %.i", m_Renderer.GetFrameIndex());
-		ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
+		m_Scene.Lights[i]->BuildUI(i);
+	}
+	ImGui::End();
+
+	ImGui::Begin("Geometry");
+	for(uint32_t i = 0; i < m_Scene.Primitives.size(); i++)
+	{ 
+		m_Scene.Primitives[i]->BuildUI(i);
+	}
+	ImGui::End();
+
+	ImGui::Begin("Materials");
+	for (uint32_t i = 0; i < m_Materials.size(); i++)
+	{
+		m_Materials[i].BuildUI(i);
+	}
+	ImGui::End();
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+	ImGui::Begin("Viewport");
+
+	m_ViewportWidth = (uint32_t)ImGui::GetContentRegionAvail().x;
+	m_ViewportHeight = (uint32_t)ImGui::GetContentRegionAvail().y;
+
+	auto FrontBuffer = m_Renderer.GetFrontBuffer();
+	if (FrontBuffer)
+	{
+		ImGui::Image(FrontBuffer->GetDescriptorSet(), { (float)FrontBuffer->GetWidth(), (float)FrontBuffer->GetHeight() },
+			ImVec2(0,1), ImVec2(1,0));
+	}
 		
-		if (ImGui::Button("Reset"))
-		{
-			m_Renderer.Reset();
-		}
-		ImGui::End();
+	ImGui::End();
+	ImGui::PopStyleVar();
 
-		ImGui::Begin("Lights");
-		for (size_t i = 0; i < m_Scene.DirectionalLights.size(); i++)
-		{
-			ImGui::PushID(i);
+	Render();
+}
 
-			DirectionalLight& directionalLight = m_Scene.DirectionalLights[i];
-			ImGui::DragFloat3("Direction", glm::value_ptr(directionalLight.Direction), 0.01f);
-			ImGui::ColorEdit3("Color", glm::value_ptr(directionalLight.Color));
-			ImGui::DragFloat("Intensity", &directionalLight.Intensity, 0.01f);
-			ImGui::Separator();
-			ImGui::PopID();
-		}
-		ImGui::End();
+void RaytraycerApp::Render()
+{
+	Timer timer;
 
-		ImGui::Begin("Geometry");
-		for(size_t i = 0; i < m_Scene.Spheres.size(); i++)
-		{ 
-			ImGui::PushID(i);
+	m_Camera.OnResize(m_ViewportWidth, m_ViewportHeight);
+	m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
+	m_Renderer.Render(m_Scene, m_Camera);
 
-			Sphere& sphere = m_Scene.Spheres[i];
-			ImGui::DragFloat3("Position", glm::value_ptr(sphere.Position), 0.01f);
-			ImGui::DragFloat("Radius", &sphere.Radius, 0.01f);
-			ImGui::DragInt("MaterialIndex", &sphere.MaterialIndex, 1.0f, 0.0f, m_Scene.Materials.size());
-
-			ImGui::Separator();
-			ImGui::PopID();
-		}
-		ImGui::End();
-
-		ImGui::Begin("Materials");
-		for (size_t i = 0; i < m_Scene.Materials.size(); i++)
-		{
-			ImGui::PushID(i);
-			Material& material = m_Scene.Materials[i];
-			ImGui::ColorEdit3("Albedo", glm::value_ptr(material.Albedo));
-			ImGui::ColorEdit3("Emmisive", glm::value_ptr(material.Emmisive));
-			ImGui::DragFloat("Metalic", &material.Metalic, 1.0f, 0.0f, 1.0f);
-			ImGui::DragFloat("Specular", &material.Specular, 0.01f);
-			ImGui::DragFloat("Roughness", &material.Roughness, 0.01f, 0.0f, 1.0f);
-			ImGui::Separator();
-			ImGui::PopID();
-		}
-		ImGui::End();
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-
-		ImGui::Begin("Viewport");
-
-		m_ViewportWidth = (uint32_t)ImGui::GetContentRegionAvail().x;
-		m_ViewportHeight = (uint32_t)ImGui::GetContentRegionAvail().y;
-
-		auto FrontBuffer = m_Renderer.GetFrontBuffer();
-		if (FrontBuffer)
-		{
-			ImGui::Image(FrontBuffer->GetDescriptorSet(), { (float)FrontBuffer->GetWidth(), (float)FrontBuffer->GetHeight() },
-				ImVec2(0,1), ImVec2(1,0));
-		}
-		
-		ImGui::End();
-		ImGui::PopStyleVar();
-
-		Render();
-	}
-
-	void Render()
-	{
-		Timer timer;
-
-		m_Camera.OnResize(m_ViewportWidth, m_ViewportHeight);
-		m_Renderer.OnResize(m_ViewportWidth, m_ViewportHeight);
-		m_Renderer.Render(m_Scene, m_Camera);
-
-		m_LastRenderTime = timer.ElapsedMillis();
-	}
-private:
-	Renderer m_Renderer;
-	Camera m_Camera;
-	Scene m_Scene;
-	uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
-	float m_LastRenderTime = 0.0f;
+	m_LastRenderTime = timer.ElapsedMillis();
 };
 
 Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
@@ -203,7 +155,7 @@ Walnut::Application* Walnut::CreateApplication(int argc, char** argv)
 	spec.Name = "Raytraycer";
 
 	Walnut::Application* app = new Walnut::Application(spec);
-	app->PushLayer<ExampleLayer>();
+	app->PushLayer<RaytraycerApp>();
 	app->SetMenubarCallback([app]()
 	{
 		if (ImGui::BeginMenu("File"))
