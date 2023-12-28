@@ -88,8 +88,8 @@ Trace Renderer::TraceScene(const Ray& ray)
 	Trace best_trace = Trace();
 	for (uint32_t i = 0; i < m_ActiveScene->Primitives.size(); i++)
 	{
-		const Primitive& primitive = *m_ActiveScene->Primitives[i].get();
-		Trace trace = primitive.TraceRay(ray);
+		const Primitive* primitive = m_ActiveScene->Primitives[i].get();
+		Trace trace = primitive->TraceRay(ray);
 		if (trace.Result == TraceResult::Hit)
 		{
 			if (trace.HitDistance > 0.0f && trace.HitDistance < best_trace.HitDistance)
@@ -101,8 +101,8 @@ Trace Renderer::TraceScene(const Ray& ray)
 
 	if (best_trace.Result == TraceResult::Hit)
 	{
-		const Primitive& primitive = *m_ActiveScene->Primitives[best_trace.PrimitiveId].get();
-		return primitive.ResolveTrace(best_trace, ray);
+		const Primitive* primitive = m_ActiveScene->Primitives[best_trace.PrimitiveId].get();
+		return primitive->ResolveTrace(best_trace, ray);
 	}
 	else
 	{
@@ -119,7 +119,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 	glm::vec3 light_sum = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 hit_contribution = glm::vec3(1.0f, 1.0f, 1.0f);
 
-	int bounces = 2;
+	int bounces = 3;
 	for (int i = 0; i < bounces; i++)
 	{
 		Trace trace = TraceScene(ray);
@@ -130,15 +130,15 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 			break;
 		}
 
-		const Primitive& primitive = *m_ActiveScene->Primitives[trace.PrimitiveId].get();
-		light_sum += primitive.Material->Emmisive * hit_contribution;
-		hit_contribution *= primitive.Material->Albedo;
+		const Primitive* primitive = m_ActiveScene->Primitives[trace.PrimitiveId].get();
+		light_sum += primitive->Material->Emmisive * hit_contribution;
+		hit_contribution *= primitive->Material->Albedo;
 
 		//Evaluate Directional Lights
 		for (int i = 0; i < m_ActiveScene->Lights.size(); i++)
 		{
-			const Light& light = *m_ActiveScene->Lights[i].get();
-			glm::vec3 lightDir = glm::normalize(light.Direction);
+			const Light* light = m_ActiveScene->Lights[i].get();
+			glm::vec3 lightDir = glm::normalize(light->Direction);
 
 			Ray directSunRay;
 			directSunRay.Origin = trace.WorldPosition + (lightDir * 0.01f);
@@ -148,13 +148,13 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 
 			if (sunRayPayload.Result == TraceResult::Miss)//If sun rays doesnt hit anything
 			{
-				light_sum += light.CalculateShading(trace.WorldNormal, hit_contribution);
+				light_sum += light->CalculateShading(trace.WorldNormal, hit_contribution);
 			}
 		}
 
 		//Set New Ray properties for next bounce
 		ray.Origin = trace.WorldPosition + trace.WorldNormal * 0.01f;//biased
-		glm::vec3 cone = Walnut::Random::Vec3(-0.5f, 0.5f) * primitive.Material->Roughness;
+		glm::vec3 cone = Walnut::Random::Vec3(-0.5f, 0.5f) * primitive->Material->Roughness;
 		ray.Direction = glm::reflect(ray.Direction, trace.WorldNormal + cone);
 	}
 
@@ -170,8 +170,8 @@ glm::vec3 Renderer::SampleFallback(const Ray& ray)
 	glm::vec3 ground = glm::vec3(0.0f, 0.0f, 0.0f);
 	for (int i = 0; i < m_ActiveScene->Lights.size(); i++)
 	{
-		const Light& light = *m_ActiveScene->Lights[i].get();
-		ground += light.CalculateShading(glm::vec3(0.0f, 1.0f, 0.0f), ground_albedo);
+		const Light* light = m_ActiveScene->Lights[i].get();
+		ground += light->CalculateShading(glm::vec3(0.0f, 1.0f, 0.0f), ground_albedo);
 	}
 
 	float sky_opacity = ray.Direction.y * 0.5f + 0.5f;

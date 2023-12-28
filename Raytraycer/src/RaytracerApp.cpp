@@ -63,12 +63,6 @@ void RaytraycerApp::RegisterPrimitives()
 
 void RaytraycerApp::RegisterLights()
 {
-	std::unique_ptr<DirectionalLight> moon = std::make_unique<DirectionalLight>();
-	moon->Direction = glm::vec3(0.6f, 0.5f, -1.0f);
-	moon->Color = glm::vec3(0.25, 0.9, 1.0);
-	moon->Intensity = 0.2f;
-	m_Scene.Lights.push_back(std::move(moon));
-
 	std::unique_ptr<DirectionalLight> sun = std::make_unique<DirectionalLight>();
 	sun->Direction = glm::vec3(-0.45f, 1.0f, 1.0f);
 	sun->Color = glm::vec3(1.0, 0.9, 0.3);
