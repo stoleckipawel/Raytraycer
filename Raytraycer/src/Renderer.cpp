@@ -92,7 +92,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 	glm::vec3 light_sum = glm::vec3(0.0f, 0.0f, 0.0f);
 	glm::vec3 hit_contribution = glm::vec3(1.0f, 1.0f, 1.0f);
 
-	int bounces = 3;
+	int bounces = 4;
 	for (int i = 0; i < bounces; i++)
 	{
 		Trace trace = TraceScene(ray);
@@ -103,7 +103,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 			break;
 		}
 
-		const Primitive* primitive = m_ActiveScene->Primitives[trace.PrimitiveId].get();
+		const Primitive* primitive = m_ActiveScene->Primitives[trace.HitGuid].get();
 		light_sum += primitive->Material->Emmisive * hit_contribution;
 		hit_contribution *= primitive->Material->Albedo;
 
@@ -140,7 +140,7 @@ Trace Renderer::TraceScene(const Ray& ray)
 	for (uint32_t i = 0; i < m_ActiveScene->Primitives.size(); i++)
 	{
 		const Primitive* primitive = m_ActiveScene->Primitives[i].get();
-		Trace trace = primitive->TraceRay(ray);
+		Trace trace = primitive->Intersect(ray);
 		if (trace.Result == TraceResult::Hit)
 		{
 			if (trace.HitDistance > 0.0f && trace.HitDistance < best_trace.HitDistance)
@@ -152,7 +152,7 @@ Trace Renderer::TraceScene(const Ray& ray)
 
 	if (best_trace.Result == TraceResult::Hit)
 	{
-		const Primitive* primitive = m_ActiveScene->Primitives[best_trace.PrimitiveId].get();
+		const Primitive* primitive = m_ActiveScene->Primitives[best_trace.HitGuid].get();
 		return primitive->ResolveTracePayload(best_trace, ray);
 	}
 	else

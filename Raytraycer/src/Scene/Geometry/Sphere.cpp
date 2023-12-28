@@ -82,7 +82,7 @@ Trace Sphere::AnalyticSolution(const Ray& ray) const
 	}
 }
 
-Trace Sphere::TraceRay(const Ray& ray) const
+Trace Sphere::Intersect(const Ray& ray) const
 {
 	return AnalyticSolution(ray);
 	//return GeometricSolution(ray);

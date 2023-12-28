@@ -5,7 +5,6 @@
 #include "Walnut/Image.h"
 #include "Renderer.h"
 #include "Scene/Scene.h"
-#include "Scene/Geometry/Sphere.h"
 #include "Scene/Lights/DirectionalLight.h"
 #include "glm/gtc/type_ptr.hpp"
 

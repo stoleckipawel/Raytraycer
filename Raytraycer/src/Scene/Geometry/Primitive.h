@@ -11,7 +11,7 @@ class Primitive
 {
 public:
 	virtual void BuildUI(uint32_t id) {};
-	virtual Trace TraceRay(const Ray& ray) const { return Trace(); };//intentionally not pure
+	virtual Trace Intersect(const Ray& ray) const { return Trace(); };//intentionally not pure
 	virtual Trace ResolveTracePayload(Trace& payload, const Ray& ray) const { return Trace(); };//intentionally not pure
 public:
 	glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);

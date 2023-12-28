@@ -7,10 +7,10 @@ Trace& Trace::Miss()
 	return *this;
 }
 
-Trace& Trace::Hit(float hitDistance, int primitiveId)
+Trace& Trace::Hit(float hitDistance, int hit_guid)
 {
 	Result = TraceResult::Hit;
 	HitDistance = hitDistance;
-	PrimitiveId = primitiveId;
+	HitGuid = hit_guid;
 	return *this;
 }
