@@ -11,10 +11,10 @@ void Plane::BuildUI(uint32_t id)
 Trace Plane::Intersect(const Ray& ray) const
 {
 	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 normal = up;// rotation 
+	glm::vec3 normal = up;
 
 	float denominator = glm::dot(ray.Direction, normal);
-	if (denominator > std::numeric_limits<float>::min());
+	if (abs(denominator) > 0.001f);//double sided
 	{
 		glm::vec3 p0l0 = Position - ray.Origin;
 		float t = (glm::dot(p0l0, normal)) / denominator;

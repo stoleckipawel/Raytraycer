@@ -87,7 +87,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 	ray.Direction = glm::normalize(m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()]);
 
 	glm::vec3 incomingLight = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 hitContribution = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::vec3 transmissionContribution = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	for (int i = 0; i < m_Settings.Bounces; i++)
 	{
@@ -96,20 +96,38 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 		if (trace.Result == TraceResult::Miss)
 		{
 			glm::vec3 environmentLight = m_ActiveScene->EnvironmentLight.SampleEnvironment(ray, m_ActiveScene->GetDirectionalLights());
-			incomingLight += environmentLight * hitContribution;
+			incomingLight += environmentLight * transmissionContribution;
 			break;
 		}
 
 		const Primitive* primitive = m_ActiveScene->Primitives[trace.HitGuid].get();
-		incomingLight += primitive->Material->Emmisive * hitContribution;
+		//Surface Properties
+		float opacity = primitive->Material->Opacity;
+		glm::vec3 diffuseAlbedo = primitive->Material->Albedo;
+		float specularAlbedo = primitive->Material->Specular;
+		glm::vec3 emmisive = primitive->Material->Emmisive;// *opacity;
 
-		hitContribution *= primitive->Material->Albedo;
+		//Emmisive
+		incomingLight += emmisive * transmissionContribution;
 
-		//Set New Ray properties for next bounce
-		glm::vec3 random = Utils::RandomHemisphereDir(trace.WorldNormal);
-		ray.Direction = glm::reflect(ray.Direction, glm::normalize(trace.WorldNormal + random * primitive->Material->Roughness));
+		
+		float fresnel = Utils::FresnelSchlick(specularAlbedo, 1.0f, 1.0f, ray.Direction, trace.WorldNormal);
+		bool isSpecularBounce = fresnel >= Walnut::Random::Float();//assumes temporal accumulation
 
-		ray.Origin = trace.WorldPosition + ray.Direction * m_epsilon;
+		glm::vec3 hitTranssmission = isSpecularBounce ? glm::vec3(fresnel, fresnel, fresnel) : diffuseAlbedo;
+		transmissionContribution *= hitTranssmission;
+
+		
+		glm::vec3 diffuseDir = Utils::RandomHemisphereDir(trace.WorldNormal);
+		//glm::vec3 refractedDir =glm::refract(ray.Direction, trace.WorldNormal, primitive->Material->IOR);
+		//bool isRefractedBounce = primitive->Material->Opacity >= Walnut::Random::Float();//assumes temporal accumulation
+		//diffuseDir = isRefractedBounce ? diffuseDir : refractedDir;
+
+		glm::vec3 reflectedDir = glm::reflect(ray.Direction, trace.WorldNormal);
+		float reflectedDirOpacity = isSpecularBounce * (1.0 - primitive->Material->Roughness);//Roughnes & Specular Integration
+		ray.Direction = diffuseDir * (1.0f - reflectedDirOpacity) + reflectedDir * reflectedDirOpacity;//lerp
+
+		ray.Origin = trace.WorldPosition + ray.Direction * m_epsilon;//bias
 	}
 
 	return glm::vec4(incomingLight, 1.0f);

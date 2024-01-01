@@ -14,23 +14,31 @@ void RaytraycerApp::RegisterMaterials()
 {
 	Material material_ground;
 	material_ground.Albedo = glm::vec3(0.68f, 0.74f, 0.67f) * 0.6f;
-	material_ground.Roughness = 0.95f;
+	material_ground.Roughness = 0.5f;
+	material_ground.Specular = 0.04f;
 	m_Materials.push_back(material_ground);
 	
 	Material material_red;
-	material_red.Albedo = glm::vec3(1.0f, 0.0f, 0.0f) * 0.5f;
-	material_red.Roughness = 0.070f;
+	material_red.Albedo = glm::vec3(1.0f, 0.5f, 0.5f) * 0.5f;
+	material_red.Roughness = 1.0f;
+	material_red.Opacity = 0.9f;
+	material_red.IOR = 1.125f;
+	material_red.Specular = 0.1f;
 	m_Materials.push_back(material_red);
 
 	Material material_white;
-	material_white.Albedo = glm::vec3(1.0f, 1.0f, 1.0f) * 0.5f;
-	material_white.Roughness = 0.160f;
+	material_white.Albedo = glm::vec3(0.5f, 1.0f, 1.0f) * 0.75f;
+	material_white.Roughness = 0.0f;
+	material_white.Opacity = 0.9f;
+	material_white.IOR = 1.125f;
+	material_white.Specular = 1.0f;
 	m_Materials.push_back(material_white);
 
 	Material material_emmisive;
-	material_emmisive.Albedo = glm::vec3(1.0f, 1.0f, 1.0f) * 0.5f;
-	material_emmisive.Emmisive = glm::vec3(0.3f, 0.3f, 0.3f);
-	material_emmisive.Roughness = 0.2f;
+	material_emmisive.Albedo = glm::vec3(0.0f, 0.0f, 0.0f);
+	material_emmisive.Emmisive = glm::vec3(1.0f, 0.9f, 0.9f) * 10.0f;
+	material_emmisive.Roughness = 0.75f;
+	material_emmisive.Specular = 0.04f;
 	m_Materials.push_back(material_emmisive);
 	
 }
@@ -43,21 +51,21 @@ void RaytraycerApp::RegisterPrimitives()
 	m_Scene.Primitives.push_back(std::move(plane_green));
 
 	std::unique_ptr<Sphere> sphere_green = std::make_unique<Sphere>();
-	sphere_green->Material = &m_Materials[0];
+	sphere_green->Material = &m_Materials[1];
 	sphere_green->Position = glm::vec3(-1.0f, 0.0f, 0.0f);
-	sphere_green->Radius = 0.6f;
+	sphere_green->Radius = 1.0f;
 	m_Scene.Primitives.push_back(std::move(sphere_green));
 
 
 	std::unique_ptr<Sphere> sphere_red = std::make_unique<Sphere>();
-	sphere_red->Material = &m_Materials[1];
-	sphere_red->Position = glm::vec3(1.0f, -0.470f, -5.0f);
-	sphere_red->Radius = 1.5;
+	sphere_red->Material = &m_Materials[2];
+	sphere_red->Position = glm::vec3(1.0f, 0.670f, -5.0f);
+	sphere_red->Radius = 2.5;
 	m_Scene.Primitives.push_back(std::move(sphere_red));
 	
 	std::unique_ptr<Sphere> sphere_emmisive = std::make_unique<Sphere>();
 	sphere_emmisive->Material = &m_Materials[3];
-	sphere_emmisive->Position = glm::vec3(16.0f, 2.0f, -52.0f);
+	sphere_emmisive->Position = glm::vec3(16.0f, 17.0f, -100.0f);
 	sphere_emmisive->Radius = 20.0f;
 	m_Scene.Primitives.push_back(std::move(sphere_emmisive));	
 }
@@ -65,9 +73,9 @@ void RaytraycerApp::RegisterPrimitives()
 void RaytraycerApp::RegisterLights()
 {
 	std::unique_ptr<DirectionalLight> sun = std::make_unique<DirectionalLight>();
-	sun->Direction = glm::vec3(-0.45f, 1.0f, 1.0f);
-	sun->Color = glm::vec3(1.0f, 0.925f, 0.77f);
-	sun->Intensity = 0.0f;
+	sun->Direction = glm::vec3(-1.0f, 0.360f, 0.0f);
+	sun->Color = glm::vec3(1.0f, 0.905f, 0.7f);
+	sun->Intensity = 120.0f;
 	m_Scene.Lights.push_back(std::move(sun));
 }
 

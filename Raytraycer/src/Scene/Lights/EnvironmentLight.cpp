@@ -30,7 +30,7 @@ glm::vec3 EnvironmentLight::SampleEnvironment(const Ray& ray, std::vector<const 
 		ground += directionalLight->CalculateShading(glm::vec3(0.0f, 1.0f, 0.0f), groundAlbedo);
 
 		//Compute sun on the sky assuming there is no atmosphere right now
-		float SunSize = 400.0f;
+		float SunSize = 600.0f;
 		float SunShape = glm::pow(directionalLight->CalculateDiffuseTerm(glm::normalize(ray.Direction)), SunSize);
 		sky += SunShape * directionalLight->Color * directionalLight->Intensity;
 	}
