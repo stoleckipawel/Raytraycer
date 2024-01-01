@@ -14,6 +14,7 @@ public:
 	struct Settings
 	{
 		bool Accumulate = true;
+		int Bounces = 4;
 	};
 
 public:
@@ -27,7 +28,6 @@ public:
 private:
 	Trace TraceScene(const Ray& ray);
 	glm::vec4 RayGen(uint32_t x, uint32_t y);
-	glm::vec3 SampleFallback(const Ray& ray);
 	void CleanHistoryBuffer();
 	void UpdateGuids();
 private:
@@ -40,6 +40,8 @@ private:
 
 	glm::vec4* m_HistoryBufferData = nullptr;
 	uint32_t m_FrameIndex = 1;
+
+	float m_epsilon = 1.0f / 255.0f;
 
 	std::vector<uint32_t> m_HorizontalPixelsIterator;
 	std::vector<uint32_t> m_VerticalPixelsIterator;

@@ -12,10 +12,10 @@ RaytraycerApp::RaytraycerApp()
 
 void RaytraycerApp::RegisterMaterials()
 {
-	Material material_green;
-	material_green.Albedo = glm::vec3(0.0f, 1.0f, 0.0f) * 0.5f;
-	material_green.Roughness = 0.03f;
-	m_Materials.push_back(material_green);
+	Material material_ground;
+	material_ground.Albedo = glm::vec3(0.68f, 0.74f, 0.67f) * 0.6f;
+	material_ground.Roughness = 0.95f;
+	m_Materials.push_back(material_ground);
 	
 	Material material_red;
 	material_red.Albedo = glm::vec3(1.0f, 0.0f, 0.0f) * 0.5f;
@@ -39,7 +39,7 @@ void RaytraycerApp::RegisterPrimitives()
 {
 	std::unique_ptr<Plane> plane_green = std::make_unique<Plane>();
 	plane_green->Material = &m_Materials[0];
-	plane_green->Position = glm::vec3(0.0f, 0.0f, 0.0f);
+	plane_green->Position = glm::vec3(0.0f, -2.0f, 0.0f);
 	m_Scene.Primitives.push_back(std::move(plane_green));
 
 	std::unique_ptr<Sphere> sphere_green = std::make_unique<Sphere>();
@@ -66,8 +66,8 @@ void RaytraycerApp::RegisterLights()
 {
 	std::unique_ptr<DirectionalLight> sun = std::make_unique<DirectionalLight>();
 	sun->Direction = glm::vec3(-0.45f, 1.0f, 1.0f);
-	sun->Color = glm::vec3(1.0, 0.9, 0.3);
-	sun->Intensity = 0.75f;
+	sun->Color = glm::vec3(1.0f, 0.925f, 0.77f);
+	sun->Intensity = 0.0f;
 	m_Scene.Lights.push_back(std::move(sun));
 }
 
@@ -85,6 +85,7 @@ void RaytraycerApp::OnUIRender()
 	ImGui::Text("Last Render Time: %.3fms", m_LastRenderTime);
 	ImGui::Text("Frame Index: %.i", m_Renderer.GetFrameIndex());
 	ImGui::Checkbox("Accumulate", &m_Renderer.GetSettings().Accumulate);
+	ImGui::DragInt("Light Bounce Count", &m_Renderer.GetSettings().Bounces, 1.0f, 1, 8);
 		
 	if (ImGui::Button("Reset"))
 	{
@@ -93,6 +94,7 @@ void RaytraycerApp::OnUIRender()
 	ImGui::End();
 
 	ImGui::Begin("Lights");
+	m_Scene.EnvironmentLight.BuildUI(655628);
 	for (int32_t i = 0; i < m_Scene.Lights.size(); i++)
 	{
 		m_Scene.Lights[i]->BuildUI(i);
