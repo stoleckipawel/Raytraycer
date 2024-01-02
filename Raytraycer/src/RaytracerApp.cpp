@@ -45,10 +45,12 @@ void RaytraycerApp::RegisterMaterials()
 
 void RaytraycerApp::RegisterPrimitives()
 {
-	std::unique_ptr<Plane> plane_green = std::make_unique<Plane>();
-	plane_green->Material = &m_Materials[0];
-	plane_green->Position = glm::vec3(0.0f, -2.0f, 0.0f);
-	m_Scene.Primitives.push_back(std::move(plane_green));
+	std::unique_ptr<Plane> plane = std::make_unique<Plane>();
+	plane->Material = &m_Materials[0];
+	plane->Position = glm::vec3(0.0f, -2.0f, 0.0f);
+	plane->Rotation = glm::vec3(0.0, 1.0f, 0.0);
+	m_Scene.Primitives.push_back(std::move(plane));
+
 
 	std::unique_ptr<Sphere> sphere_green = std::make_unique<Sphere>();
 	sphere_green->Material = &m_Materials[1];

@@ -4,23 +4,23 @@ void Plane::BuildUI(uint32_t id)
 {
 	ImGui::PushID(id);
 	ImGui::DragFloat3("Position", glm::value_ptr(Position), 0.01f);
+	ImGui::DragFloat3("Rotation", glm::value_ptr(Rotation), 0.01f);
 	ImGui::Separator();
 	ImGui::PopID();
 }
 
 Trace Plane::Intersect(const Ray& ray) const
 {
-	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 normal = up;
-
-	float denominator = glm::dot(ray.Direction, normal);
-	if (abs(denominator) > 0.001f);//double sided
+	float denominator = glm::dot(ray.Direction, Rotation);
+	if (denominator > 0.0f);//avoid case when directional & normal is completely perpendicular
 	{
 		glm::vec3 p0l0 = Position - ray.Origin;
-		float t = (glm::dot(p0l0, normal)) / denominator;
+		float t = (glm::dot(p0l0, Rotation)) / denominator;
 		if (t >= 0)
 		{
-			return Trace().Hit(t, Guid);
+			Trace trace = Trace().Hit(t, Guid);
+			trace.WorldNormal = Rotation;
+			return trace;
 		}
 		
 	}
@@ -31,8 +31,5 @@ Trace Plane::Intersect(const Ray& ray) const
 Trace Plane::ResolveTracePayload(Trace& trace, const Ray& ray) const
 {
 	trace.WorldPosition = ray.Origin + ray.Direction * trace.HitDistance;
-
-	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	trace.WorldNormal = up;// rotation 
 	return trace;
 }
