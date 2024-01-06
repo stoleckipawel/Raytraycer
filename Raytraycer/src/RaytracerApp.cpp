@@ -1,6 +1,7 @@
 #include "RaytraycerApp.h"
 #include "Scene/Geometry/Sphere.h"
 #include "Scene/Geometry/Plane.h"
+#include "Scene/Geometry/Box.h"
 
 RaytraycerApp::RaytraycerApp()
 	: m_Camera(45.0f, 0.0001f, 1000.0f)
@@ -45,12 +46,17 @@ void RaytraycerApp::RegisterMaterials()
 
 void RaytraycerApp::RegisterPrimitives()
 {
+
+
 	std::unique_ptr<Plane> plane = std::make_unique<Plane>();
 	plane->Material = &m_Materials[0];
 	plane->Position = glm::vec3(0.0f, -2.0f, 0.0f);
 	plane->Rotation = glm::vec3(0.0, 1.0f, 0.0);
 	m_Scene.Primitives.push_back(std::move(plane));
 
+	std::unique_ptr<Box> box = std::make_unique<Box>();
+	box->Material = &m_Materials[2];
+	m_Scene.Primitives.push_back(std::move(box));
 
 	std::unique_ptr<Sphere> sphere_green = std::make_unique<Sphere>();
 	sphere_green->Material = &m_Materials[1];

@@ -14,7 +14,7 @@ public:
 	struct Settings
 	{
 		bool Accumulate = true;
-		int Bounces = 3;
+		int Bounces = 4;
 	};
 
 public:
