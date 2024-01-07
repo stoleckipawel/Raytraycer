@@ -12,7 +12,7 @@
 #define MaterialIDRough 6
 
 RaytraycerApp::RaytraycerApp()
-	: m_Camera(45.0f, 0.0001f, 1000.0f)
+	: m_Camera(86.0f, 0.0001f, 1000.0f)
 {
 	RegisterMaterials();
 	CornellBox();
@@ -20,67 +20,74 @@ RaytraycerApp::RaytraycerApp()
 
 void RaytraycerApp::CornellBox()
 {
-	std::unique_ptr<Plane> plane = std::make_unique<Plane>();
-	plane->Material = &m_Materials[MaterialIDWhite];
-	plane->Position = glm::vec3(0.0f, -2.0f, 0.0f);
-	m_Scene.Primitives.push_back(std::move(plane));
+	const float box_size = 30.0f;
+	const float box_size_halved = box_size * 0.5f;
+	
+	float light_scale = box_size * 0.1;
+	float glossy_sphere_radius = box_size * 0.2;
+	glm::vec3 rough_box_size = glm::vec3(0.7f, 2.0f, 0.7f) * box_size * 0.15f;
 
-	//std::unique_ptr<Box> box = std::make_unique<Box>();
-	//box->Material = &m_Materials[MaterialIDRed];
-	//box->Position = glm::vec3(0.0f, 0.0f, 0.0);
-	//box->Scale = glm::vec3(1.0f, 1.0f, 1.0f);
-	//m_Scene.Primitives.push_back(std::move(box));
+	std::unique_ptr<Plane> plane_bottom = std::make_unique<Plane>();
+	plane_bottom->Material = &m_Materials[MaterialIDWhite];
+	plane_bottom->Position = glm::vec3(0.0f, -box_size_halved, 0.0f);
+	m_Scene.Primitives.push_back(std::move(plane_bottom));
 
-	std::unique_ptr<Box> box_left = std::make_unique<Box>();
-	box_left->Material = &m_Materials[MaterialIDRed];
-	box_left->Position = glm::vec3(0.0f, -0.5f, 0.0);
-	box_left->Scale = glm::vec3(0.1f, 3.0f, 3.0f);
-	m_Scene.Primitives.push_back(std::move(box_left));
+	std::unique_ptr<Plane> plane_top = std::make_unique<Plane>();
+	plane_top->Material = &m_Materials[MaterialIDWhite];
+	plane_top->Position = glm::vec3(0.0f, box_size_halved, 0.0f);
+	plane_top->Rotation = glm::vec3(0.0f, -1.0f, 0.0f);
+	m_Scene.Primitives.push_back(std::move(plane_top));
 
-	std::unique_ptr<Box> box_right = std::make_unique<Box>();
-	box_right->Material = &m_Materials[MaterialIDGreen];
-	box_right->Position = glm::vec3(3.0f, -0.5f, 0.0);
-	box_right->Scale = glm::vec3(0.1f, 3.0f, 3.0f);
-	m_Scene.Primitives.push_back(std::move(box_right));
+	std::unique_ptr<Plane> plane_left = std::make_unique<Plane>();
+	plane_left->Material = &m_Materials[MaterialIDRed];
+	plane_left->Position = glm::vec3(-box_size_halved, 0.0f, 0.0f);
+	plane_left->Rotation = glm::vec3(1.0f, 0.0f, 0.0f);
+	m_Scene.Primitives.push_back(std::move(plane_left));
+	
+	std::unique_ptr<Plane> plane_right = std::make_unique<Plane>();
+	plane_right->Material = &m_Materials[MaterialIDGreen];
+	plane_right->Position = glm::vec3(box_size_halved, 0.0f, 0.0f);
+	plane_right->Rotation = glm::vec3(-1.0f, 0.0f, 0.0f);
+	m_Scene.Primitives.push_back(std::move(plane_right));
 
-	std::unique_ptr<Box> box_back = std::make_unique<Box>();
-	box_back->Material = &m_Materials[MaterialIDWhite];
-	box_back->Position = glm::vec3(1.5f, -0.5f, -1.5f);
-	box_back->Scale = glm::vec3(3.0f, 3.0f, 0.1f);
-	m_Scene.Primitives.push_back(std::move(box_back));
+	std::unique_ptr<Plane> plane_back = std::make_unique<Plane>();
+	plane_back->Material = &m_Materials[MaterialIDWhite];
+	plane_back->Position = glm::vec3(0.0, 0.0f, box_size_halved);
+	plane_back->Rotation = glm::vec3(0.0f, 0.0f, -1.0f);
+	m_Scene.Primitives.push_back(std::move(plane_back));
 
-
-	std::unique_ptr<Box> box_top = std::make_unique<Box>();
-	box_top->Material = &m_Materials[MaterialIDWhite];
-	box_top->Position = glm::vec3(1.5f, 1.0f, 0.0f);
-	box_top->Scale = glm::vec3(3.1f, 0.1f, 3.0f);
-	m_Scene.Primitives.push_back(std::move(box_top));
+	std::unique_ptr<Plane> plane_front = std::make_unique<Plane>();
+	plane_front->Material = &m_Materials[MaterialIDWhite];
+	plane_front->Position = glm::vec3(0.0, 0.0f, -box_size_halved);
+	plane_front->Rotation = glm::vec3(0.0f, 0.0f, 1.0f);
+	m_Scene.Primitives.push_back(std::move(plane_front));
 
 	std::unique_ptr<Box> box_top_emmisive = std::make_unique<Box>();
 	box_top_emmisive->Material = &m_Materials[MaterialIDEmmisive];
-	box_top_emmisive->Position = glm::vec3(1.5f, 0.9f, 0.0f);
-	box_top_emmisive->Scale = glm::vec3(0.75f, 0.1f, 0.75f);
+	box_top_emmisive->Position = glm::vec3(0.0f, box_size_halved, 0.0f);
+	box_top_emmisive->Scale = glm::vec3(light_scale, 0.1f, light_scale);
 	m_Scene.Primitives.push_back(std::move(box_top_emmisive));
-
+	
 	std::unique_ptr<Sphere> sphere = std::make_unique<Sphere>();
 	sphere->Material = &m_Materials[MaterialIDMirror];
-	sphere->Position = glm::vec3(1.0f, -1.5f, 0.5f);
+	sphere->Position = glm::vec3(-box_size_halved, -box_size_halved, -box_size_halved) + glossy_sphere_radius * glm::vec3(1.2f, 1.0, 1.2f);
+	sphere->Radius = glossy_sphere_radius;
 	m_Scene.Primitives.push_back(std::move(sphere));
 
 	std::unique_ptr<Box> box_rough = std::make_unique<Box>();
+	glm::vec3 offset = rough_box_size * glm::sqrt(2.0f) * 1.5f;
 	box_rough->Material = &m_Materials[MaterialIDRough];
-	box_rough->Position = glm::vec3(2.0f, -1.0f, 0.0f);
-	box_rough->Rotation = glm::vec3(0.0, 45.0f, 0.0f);
-	box_rough->Scale = glm::vec3(0.5f, 1.5f, 0.5f);
+	box_rough->Position = glm::vec3(box_size_halved - offset.x, -box_size_halved + rough_box_size.y, -box_size_halved + offset.z);
+	box_rough->Rotation = glm::vec3(0.0, 42.0f, 0.0f);
+	box_rough->Scale = rough_box_size;
 	m_Scene.Primitives.push_back(std::move(box_rough));
-	
 }
 
 void RaytraycerApp::RegisterMaterials()
 {
-	float roughness = 1.0f;
-	float specular = 0.04f;
-	float albedo_lum = 0.94f;
+	float roughness = 0.4f;
+	float specular = 0.26f;
+	float albedo_lum = 0.925f;
 
 	Material material_ground;
 	material_ground.Albedo = glm::vec3(0.68f, 0.74f, 0.67f) * 0.6f;
@@ -113,13 +120,13 @@ void RaytraycerApp::RegisterMaterials()
 	m_Materials.push_back(material_emmisive);
 
 	Material material_mirror;
-	material_mirror.Roughness = 0.0f;
-	material_mirror.Specular = 0.5f;
+	material_mirror.Roughness = 0.01f;
+	material_mirror.Specular = 0.65f;
 	m_Materials.push_back(material_mirror);
 
 	Material material_rough;
-	material_rough.Roughness = 0.1f;
-	material_rough.Specular = 0.5f;
+	material_rough.Roughness = 0.125f;
+	material_rough.Specular = 0.65f;
 	m_Materials.push_back(material_rough);
 }
 

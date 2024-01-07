@@ -15,14 +15,13 @@ glm::mat4 Transform::GetMatrix()
     // Apply translation
     model_mtx = glm::translate(model_mtx, position);
 
+    // Apply scaling
+    model_mtx = glm::scale(model_mtx, scale);
+
     // Apply rotation
     model_mtx = glm::rotate(model_mtx, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
     model_mtx = glm::rotate(model_mtx, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
     model_mtx = glm::rotate(model_mtx, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-
-    // Apply scaling
-    model_mtx = glm::scale(model_mtx, scale);
-
     return model_mtx;
 }
 

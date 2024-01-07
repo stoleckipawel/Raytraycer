@@ -22,8 +22,10 @@ glm::vec3 Box::GetExtentMax() const
 
 Trace Box::Intersect(const Ray& ray) const
 {
+	Trace trace;
+
 	glm::vec3 rayOriginLocal = glm::vec3(InvWorldMtx * glm::vec4(ray.Origin, 1.0f));
-	glm::vec3 rayDirectionLocal = glm::vec3(InvWorldMtx * glm::vec4(ray.Direction, 0.0f));
+	glm::vec3 rayDirectionLocal = glm::mat3(InvWorldMtx) * ray.Direction;
 	rayDirectionLocal = glm::normalize(rayDirectionLocal);
 
 	glm::vec3 lb = GetExtentMin();
@@ -45,17 +47,16 @@ Trace Box::Intersect(const Ray& ray) const
 	// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
 	if (tmax < 0)
 	{
-		return Trace().Miss();
+		return trace.Miss();
 	}
 
 	// if tmin > tmax, ray doesn't intersect AABB
 	if (tmin > tmax)
 	{
-		return Trace().Miss();
+		return trace.Miss();
 	}
 
 	//We have hit!
-	Trace trace;
 	trace.Result = TraceResult::Hit;
 	trace.LocalPosition = rayOriginLocal + tmin * rayDirectionLocal;;
 	trace.WorldPosition = WorldMtx * glm::vec4(trace.LocalPosition, 1.0f);

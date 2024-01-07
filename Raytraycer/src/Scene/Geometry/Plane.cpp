@@ -16,6 +16,7 @@ void Plane::BuildUI(uint32_t id)
 
 Trace Plane::Intersect(const Ray& ray) const
 {
+	Trace trace;
 	float denominator = glm::dot(ray.Direction, Rotation);
 	if (denominator > 0.0f);//avoid case when directional & normal is completely perpendicular
 	{
@@ -23,14 +24,14 @@ Trace Plane::Intersect(const Ray& ray) const
 		float t = (glm::dot(p0l0, Rotation)) / denominator;
 		if (t >= 0)
 		{
-			Trace trace = Trace().Hit(t, Guid);
+			trace.Hit(t, Guid);
 			trace.WorldNormal = Rotation;
 			return trace;
 		}
 		
 	}
 
-	return Trace().Miss();
+	return trace.Miss();
 }
 
 Trace Plane::ResolveTracePayload(Trace& trace, const Ray& ray) const
