@@ -49,7 +49,6 @@ void RaytraycerApp::CornellBox()
 	box_back->Scale = glm::vec3(3.0f, 3.0f, 0.1f);
 	m_Scene.Primitives.push_back(std::move(box_back));
 
-
 	std::unique_ptr<Box> box_top = std::make_unique<Box>();
 	box_top->Material = &m_Materials[MaterialIDWhite];
 	box_top->Position = glm::vec3(1.5f, 1.0f, 0.0f);

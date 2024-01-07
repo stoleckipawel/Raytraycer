@@ -21,7 +21,7 @@ glm::vec3 EnvironmentLight::SampleEnvironment(const Ray& ray, std::vector<const 
 	float skyGradient = glm::sqrt(glm::max(0.0f, ray.Direction.y));
 	glm::vec3 sky = skyHorizon * (1.0f - skyGradient) + skyZenith * skyGradient;
 
-	glm::vec3 ground = groundAlbedo;
+	glm::vec3 ground = groundAlbedo * SkyIntensity;
 	for (int i = 0; i < directionalLights.size(); i++)
 	{
 		const DirectionalLight* directionalLight = directionalLights[i];

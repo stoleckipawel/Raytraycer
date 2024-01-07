@@ -8,6 +8,7 @@
 #include "Scene/Scene.h"
 
 
+
 class Renderer
 {
 public:
@@ -15,6 +16,7 @@ public:
 	{
 		bool Accumulate = true;
 		int Bounces = 4;
+		bool DebugNormal = false;
 	};
 
 public:
@@ -30,6 +32,7 @@ private:
 	glm::vec4 RayGen(uint32_t x, uint32_t y);
 	void CleanHistoryBuffer();
 	void UpdateGuids();
+	void UpdateTransforms();
 private:
 	std::shared_ptr<Walnut::Image> m_FrontBuffer;
 	uint32_t* m_FrontBufferData = nullptr;

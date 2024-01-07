@@ -1,5 +1,10 @@
 #include "Plane.h"
 
+Plane::Plane()
+{
+	Rotation = glm::vec3(0.0f, 1.0f, 0.0f);
+}
+
 void Plane::BuildUI(uint32_t id)
 {
 	ImGui::PushID(id);

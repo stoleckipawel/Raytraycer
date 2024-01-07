@@ -16,13 +16,13 @@ class RaytraycerApp : public Layer
 {
 public:
 	RaytraycerApp();
+
 	virtual void OnUpdate(float ts) override;
 	virtual void OnUIRender() override;
 private:
 	void Render();
+	void CornellBox();
 	void RegisterMaterials();
-	void RegisterPrimitives();
-	void RegisterLights();
 private:
 	Renderer m_Renderer;
 	Camera m_Camera;

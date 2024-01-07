@@ -44,6 +44,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 	m_ActiveScene = &scene;
 
 	UpdateGuids();
+	UpdateTransforms();
 
 	//Clean Buffer
 	if (m_FrameIndex == 1)
@@ -70,7 +71,7 @@ void Renderer::Render(const Scene& scene, const Camera& camera)
 
 	m_FrontBuffer->SetData(m_FrontBufferData);
 
-	if (m_Settings.Accumulate)
+	if (m_Settings.Accumulate && !m_Settings.DebugNormal)
 	{
 		m_FrameIndex++;
 	}
@@ -100,6 +101,15 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 			break;
 		}
 
+		if (m_Settings.DebugNormal)
+		{
+			//Red - Right
+			//Green - UP
+			//Blue  Front
+			incomingLight = trace.WorldNormal * 0.5f + 0.5f;
+			break;
+		}
+
 		const Primitive* primitive = m_ActiveScene->Primitives[trace.HitGuid].get();
 		//Surface Properties
 		float opacity = primitive->Material->Opacity;
@@ -109,7 +119,6 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 
 		//Emmisive
 		incomingLight += emmisive * transmissionContribution;
-
 		
 		float fresnel = Utils::FresnelSchlick(specularAlbedo, 1.0f, 1.0f, ray.Direction, trace.WorldNormal);
 		bool isSpecularBounce = fresnel >= Walnut::Random::Float();//assumes temporal accumulation
@@ -117,17 +126,13 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 		glm::vec3 hitTranssmission = isSpecularBounce ? glm::vec3(fresnel, fresnel, fresnel) : diffuseAlbedo;
 		transmissionContribution *= hitTranssmission;
 
-		
 		glm::vec3 diffuseDir = Utils::RandomHemisphereDir(trace.WorldNormal);
-		//glm::vec3 refractedDir =glm::refract(ray.Direction, trace.WorldNormal, primitive->Material->IOR);
-		//bool isRefractedBounce = primitive->Material->Opacity >= Walnut::Random::Float();//assumes temporal accumulation
-		//diffuseDir = isRefractedBounce ? diffuseDir : refractedDir;
 
 		glm::vec3 reflectedDir = glm::reflect(ray.Direction, trace.WorldNormal);
 		float reflectedDirOpacity = isSpecularBounce * (1.0 - primitive->Material->Roughness);//Roughnes & Specular Integration
 		ray.Direction = diffuseDir * (1.0f - reflectedDirOpacity) + reflectedDir * reflectedDirOpacity;//lerp
 
-		ray.Origin = trace.WorldPosition + ray.Direction * m_epsilon;//bias
+		ray.Origin = trace.WorldPosition + trace.WorldNormal * m_epsilon;//bias
 	}
 
 	return glm::vec4(incomingLight, 1.0f);
@@ -172,5 +177,13 @@ void Renderer::UpdateGuids()
 	for (int i = 0; i < m_ActiveScene->Primitives.size(); i++)
 	{
 		m_ActiveScene->Primitives[i]->Guid = i;
+	}
+}
+
+void Renderer::UpdateTransforms()
+{
+	for (int i = 0; i < m_ActiveScene->Primitives.size(); i++)
+	{
+		m_ActiveScene->Primitives[i]->UpdateTransforms();;
 	}
 }

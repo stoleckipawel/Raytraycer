@@ -3,7 +3,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
-
+#include "imgui.h"
+#include "glm/gtc/type_ptr.hpp"
 #include "Walnut/Input/Input.h"
 
 using namespace Walnut;
