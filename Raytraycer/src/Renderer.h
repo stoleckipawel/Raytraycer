@@ -15,7 +15,7 @@ public:
 	struct Settings
 	{
 		bool Accumulate = true;
-		int Bounces = 4;
+		int Bounces = 10;
 		bool DebugNormal = false;
 	};
 
@@ -44,7 +44,8 @@ private:
 	glm::vec4* m_HistoryBufferData = nullptr;
 	uint32_t m_FrameIndex = 1;
 
-	float m_epsilon = 1.0f / 255.0f;
+	const float m_epsilon = 1.0f / 255.0f;
+	const float AIR_IOR = 1.0003f;
 
 	std::vector<uint32_t> m_HorizontalPixelsIterator;
 	std::vector<uint32_t> m_VerticalPixelsIterator;

@@ -25,14 +25,16 @@ glm::vec3 EnvironmentLight::SampleEnvironment(const Ray& ray, std::vector<const 
 	for (int i = 0; i < directionalLights.size(); i++)
 	{
 		const DirectionalLight* directionalLight = directionalLights[i];
+		if (directionalLight->Intensity > 0.0f)
+		{
+			//Compute ground sun shading assuming it's point up and is only lit with directional light
+			//ground += directionalLight->CalculateShading(glm::vec3(0.0f, 1.0f, 0.0f), groundAlbedo);
 
-		//Compute ground sun shading assuming it's point up and is only lit with directional light
-		//ground += directionalLight->CalculateShading(glm::vec3(0.0f, 1.0f, 0.0f), groundAlbedo);
-
-		//Compute sun on the sky assuming there is no atmosphere right now
-		float SunSize = 600.0f;
-		float SunShape = glm::pow(directionalLight->CalculateDiffuseTerm(glm::normalize(ray.Direction)), SunSize);
-		sky += SunShape * directionalLight->Color * directionalLight->Intensity;
+			//Compute sun on the sky assuming there is no atmosphere right now
+			float SunSize = 600.0f;
+			float SunShape = glm::pow(directionalLight->CalculateDiffuseTerm(glm::normalize(ray.Direction)), SunSize);
+			sky += SunShape * directionalLight->Color * directionalLight->Intensity;
+		}
 	}
 
 	float sky_opacity = glm::smoothstep(-0.01f, 0.00f, ray.Direction.y);

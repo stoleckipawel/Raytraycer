@@ -120,7 +120,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 		//Emmisive
 		incomingLight += emmisive * transmissionContribution;
 		
-		float fresnel = Utils::FresnelSchlick(specularAlbedo, 1.0f, 1.0f, ray.Direction, trace.WorldNormal);
+		float fresnel = Utils::FresnelSchlick(specularAlbedo, AIR_IOR, 1.0f, ray.Direction, trace.WorldNormal);
 		bool isSpecularBounce = fresnel >= Walnut::Random::Float();//assumes temporal accumulation
 
 		glm::vec3 hitTranssmission = isSpecularBounce ? glm::vec3(fresnel, fresnel, fresnel) : diffuseAlbedo;

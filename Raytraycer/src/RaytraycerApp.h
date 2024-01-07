@@ -22,6 +22,7 @@ public:
 private:
 	void Render();
 	void CornellBox();
+	void SceneOutdoor();
 	void RegisterMaterials();
 private:
 	Renderer m_Renderer;
