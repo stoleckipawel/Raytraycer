@@ -34,7 +34,7 @@ void RaytraycerApp::CornellBox()
 	float light_scale = box_size * 0.1;
 	float glossy_sphere_radius = box_size * 0.2;
 	float rough_sphere_radius = glossy_sphere_radius * 0.5;
-	glm::vec3 rough_box_size = glm::vec3(0.9f, 1.75f, 0.9f) * box_size * 0.13f;
+	glm::vec3 rough_box_size = glm::vec3(0.9f, 2.0f, 0.9f) * box_size * 0.13f;
 
 	std::unique_ptr<Plane> plane_bottom = std::make_unique<Plane>();
 	plane_bottom->Material = &m_Materials[MaterialIDWhite];

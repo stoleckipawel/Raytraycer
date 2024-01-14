@@ -18,9 +18,6 @@ void Material::BuildUI(uint32_t id)
 
 glm::vec3 Material::Resolve(Ray& ray, Trace& trace) const
 {
-	float NoL = glm::clamp(glm::dot(-ray.Direction, trace.WorldNormal), 0.0f, 1.0f);
-	ray.Transmission *= NoL;
-
 	//Account of self light emmiting objects
 	glm::vec3 incomingLight = Emmisive * ray.Transmission;
 
@@ -32,7 +29,7 @@ glm::vec3 Material::Resolve(Ray& ray, Trace& trace) const
 	glm::vec3 specularDir = glm::reflect(ray.Direction, trace.WorldNormal);
 
 	//Diffuse Dir
-	glm::vec3 diffuseDir = Utils::RandomHemisphereDir(trace.WorldNormal);
+	glm::vec3 diffuseDir = Utils::CosineWeightedHemisphereSample(trace.WorldNormal);
 	
 	//Roughness integration
 	float specularConeWidth = isSpecularBounce * (1.0 - Roughness);//the higher roughness the wider specular lobe

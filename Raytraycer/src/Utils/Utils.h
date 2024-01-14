@@ -16,6 +16,35 @@ namespace Utils
 		return ((uint8_t)color.x) | ((uint8_t)color.y << 8) | ((uint8_t)color.z << 16) | ((uint8_t)color.w << 24);
 	}
 
+
+	static glm::vec3 CosineWeightedHemisphereSample(const glm::vec3& normal)
+	{
+		float u1 = Walnut::Random::Float();
+		float u2 = Walnut::Random::Float();
+
+		float cosTheta = sqrt(1.0f - u1);
+		float sinTheta = sqrt(u1);
+
+		float phi = 2.0f * 3.141592653589793 * u2;
+
+		// Calculate the tangent and bitangent vectors using a more robust method
+		glm::vec3 tangent, bitangent;
+		if (std::abs(normal.x) > 0.1f)
+			tangent = glm::normalize(glm::cross(normal, glm::vec3(0.0f, 1.0f, 0.0f)));
+		else
+			tangent = glm::normalize(glm::cross(normal, glm::vec3(1.0f, 0.0f, 0.0f)));
+
+		bitangent = glm::cross(normal, tangent);
+
+		// Form a basis matrix using the tangent, bitangent, and normal vectors
+		glm::mat3 basisMatrix = glm::mat3(tangent, bitangent, normal);
+
+		// Transform the sampled direction from local coordinates to world coordinates
+		glm::vec3 hemisphereDir = basisMatrix * glm::vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+
+		return hemisphereDir;
+	}
+
 	static glm::vec3 RandomHemisphereDir(glm::vec3 Normal)
 	{
 		glm::vec3 random3 = Walnut::Random::Vec3(-1.0f, 1.0f);
