@@ -18,6 +18,9 @@ void Material::BuildUI(uint32_t id)
 
 glm::vec3 Material::Resolve(Ray& ray, Trace& trace) const
 {
+	float NoL = glm::clamp(glm::dot(-ray.Direction, trace.WorldNormal), 0.0f, 1.0f);
+	ray.Transmission *= NoL;
+
 	//Account of self light emmiting objects
 	glm::vec3 incomingLight = Emmisive * ray.Transmission;
 

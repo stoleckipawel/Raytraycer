@@ -18,8 +18,10 @@ namespace Utils
 
 	static glm::vec3 RandomHemisphereDir(glm::vec3 Normal)
 	{
-		glm::vec3 random_dir = glm::normalize(Walnut::Random::Vec3(-1.0f, 1.0f));
-		return glm::sign(glm::dot(random_dir, Normal)) * random_dir;//makes sure it's half sphere dirs
+		glm::vec3 random3 = Walnut::Random::Vec3(-1.0f, 1.0f);
+		glm::vec3 random_dir = glm::normalize(random3);
+		float hemisphereSign = glm::sign(glm::dot(random_dir, Normal));
+		return hemisphereSign * random_dir;//makes sure it's half sphere dirs
 	}
 
 	static float FresnelSchlick(float f0, float ior_inside, float ior_outside, glm::vec3 normal, glm::vec3 incident)

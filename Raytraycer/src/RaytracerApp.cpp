@@ -34,7 +34,7 @@ void RaytraycerApp::CornellBox()
 	float light_scale = box_size * 0.1;
 	float glossy_sphere_radius = box_size * 0.2;
 	float rough_sphere_radius = glossy_sphere_radius * 0.5;
-	glm::vec3 rough_box_size = glm::vec3(0.7f, 1.75f, 0.7f) * box_size * 0.145f;
+	glm::vec3 rough_box_size = glm::vec3(0.9f, 1.75f, 0.9f) * box_size * 0.13f;
 
 	std::unique_ptr<Plane> plane_bottom = std::make_unique<Plane>();
 	plane_bottom->Material = &m_Materials[MaterialIDWhite];
@@ -84,10 +84,10 @@ void RaytraycerApp::CornellBox()
 	m_Scene.Primitives.push_back(std::move(sphere));
 
 	std::unique_ptr<Box> box_rough = std::make_unique<Box>();
-	glm::vec3 offset = rough_box_size * glm::sqrt(2.0f) * 1.4f;
+	glm::vec3 offset = rough_box_size * glm::sqrt(2.0f) * 1.2f;
 	box_rough->Material = &m_Materials[MaterialIDRough];
 	box_rough->Position = glm::vec3(box_size_halved - offset.x, -box_size_halved + rough_box_size.y, -box_size_halved + offset.z);
-	box_rough->Rotation = glm::vec3(0.0, 33.0f, 0.0f);
+	box_rough->Rotation = glm::vec3(0.0, 44.0f, 0.0f);
 	box_rough->Scale = rough_box_size;
 	m_Scene.Primitives.push_back(std::move(box_rough));
 }
@@ -98,10 +98,10 @@ void RaytraycerApp::SceneOutdoor()
 
 void RaytraycerApp::RegisterMaterials()
 {
-	float roughness = 0.36f;
-	float specular = 0.29f;
-	float albedo_lum = 0.84f;
-	float emmisive_lum = 30.0f;
+	float roughness = 0.35f;
+	float specular = 0.22f;
+	float albedo_lum = 0.65f;
+	float emmisive_lum = 150.0f;
 
 	Material material_ground;
 	material_ground.Albedo = glm::vec3(0.68f, 0.74f, 0.67f) * 0.6f;
@@ -152,8 +152,8 @@ void RaytraycerApp::RegisterMaterials()
 
 	Material material_top;
 	material_top.Albedo = glm::vec3(albedo_lum, albedo_lum, albedo_lum);
-	material_top.Roughness = 0.3;
-	material_top.Specular = 0.7;
+	material_top.Roughness = 0.25;
+	material_top.Specular = 0.6;
 	m_Materials.push_back(material_top);
 }
 
