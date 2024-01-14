@@ -18,16 +18,15 @@ RaytraycerApp::RaytraycerApp()
 {
 	RegisterMaterials();
 	CornellBox();
-
 }
 
 void RaytraycerApp::CornellBox()
 {
-	std::unique_ptr<DirectionalLight> Sun = std::make_unique<DirectionalLight>();
-	Sun->Intensity = 0.0f;
-	Sun->Color = glm::vec3(1.0f, 0.90f, 0.58f);
-	Sun->Direction = glm::normalize(glm::vec3(0.5f, 1.0f, 0.0f));
-	m_Scene.Lights.push_back(std::move(Sun));
+	//std::unique_ptr<DirectionalLight> Sun = std::make_unique<DirectionalLight>();
+	//Sun->Intensity = 0.0f;
+	//Sun->Color = glm::vec3(1.0f, 0.90f, 0.58f);
+	//Sun->Direction = glm::normalize(glm::vec3(0.5f, 1.0f, 0.0f));
+	//m_Scene.Lights.push_back(std::move(Sun));
 
 	const float box_size = 30.0f;
 	const float box_size_halved = box_size * 0.5f;
@@ -101,7 +100,8 @@ void RaytraycerApp::RegisterMaterials()
 {
 	float roughness = 0.36f;
 	float specular = 0.29f;
-	float albedo_lum = 0.967f;
+	float albedo_lum = 0.84f;
+	float emmisive_lum = 30.0f;
 
 	Material material_ground;
 	material_ground.Albedo = glm::vec3(0.68f, 0.74f, 0.67f) * 0.6f;
@@ -128,7 +128,7 @@ void RaytraycerApp::RegisterMaterials()
 	m_Materials.push_back(material_green);
 
 	Material material_emmisive;
-	material_emmisive.Emmisive = glm::vec3(1.0f, 0.90f, 0.58f) * 20.0f;
+	material_emmisive.Emmisive = glm::vec3(1.0f, 0.90f, 0.58f) * emmisive_lum;
 	material_emmisive.Roughness = roughness;
 	material_emmisive.Specular = specular;
 	m_Materials.push_back(material_emmisive);

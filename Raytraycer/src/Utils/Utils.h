@@ -4,6 +4,11 @@
 
 namespace Utils 
 {
+	static glm::vec3 Lerp(glm::vec3 a, glm::vec3 b, float alpha)
+	{
+		return a * (1.0f - alpha) + (b * alpha);
+	}
+
 	static uint32_t ConvertColorToUInt32(glm::vec4 color)
 	{
 		color = glm::clamp(color, glm::vec4(0.0f), glm::vec4(1.0f));
@@ -16,7 +21,6 @@ namespace Utils
 		glm::vec3 random_dir = glm::normalize(Walnut::Random::Vec3(-1.0f, 1.0f));
 		return glm::sign(glm::dot(random_dir, Normal)) * random_dir;//makes sure it's half sphere dirs
 	}
-
 
 	static float FresnelSchlick(float f0, float ior_inside, float ior_outside, glm::vec3 normal, glm::vec3 incident)
 	{

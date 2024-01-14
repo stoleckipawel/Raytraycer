@@ -107,8 +107,7 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 
 		//Accumulate Incoming light & Setup new ray bonce ray dir
 		const Primitive* primitive = m_ActiveScene->Primitives[trace.HitGuid].get();
-		const Material* material = primitive->Material;
-		incomingLight += material->Resolve(ray, trace);
+		incomingLight += primitive->Material->Resolve(ray, trace);
 	}
 
 	return glm::vec4(incomingLight, 1.0f);

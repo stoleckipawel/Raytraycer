@@ -22,19 +22,24 @@ glm::vec3 Material::Resolve(Ray& ray, Trace& trace) const
 	glm::vec3 incomingLight = Emmisive * ray.Transmission;
 
 	//Compute next bounce Direction
-	float fresnel = Utils::FresnelSchlick(Specular, AIR_IOR, 1.0f, ray.Direction, trace.WorldNormal);
-	bool isSpecularBounce = fresnel >= Walnut::Random::Float();//assumes temporal accumulation
 
+	//Specular
+	float fresnel = Utils::FresnelSchlick(Specular, AIR_IOR, 1.0f, ray.Direction, trace.WorldNormal);
+	bool isSpecularBounce = fresnel >= Walnut::Random::Float();
+	glm::vec3 specularDir = glm::reflect(ray.Direction, trace.WorldNormal);
+
+	//Diffuse Dir
+	glm::vec3 diffuseDir = Utils::RandomHemisphereDir(trace.WorldNormal);
+	
+	//Roughness integration
+	float specularConeWidth = isSpecularBounce * (1.0 - Roughness);//the higher roughness the wider specular lobe
+	ray.Direction = Utils::Lerp(diffuseDir, specularDir, specularConeWidth);
+
+	//Apply Ray Bias
+	ray.Origin = trace.WorldPosition + trace.WorldNormal * EPSILON;
+
+	//Reduce Ray Transsmission
 	glm::vec3 hitTranssmission = isSpecularBounce ? glm::vec3(fresnel, fresnel, fresnel) : Albedo;
 	ray.Transmission *= hitTranssmission;
-
-	glm::vec3 diffuseDir = Utils::RandomHemisphereDir(trace.WorldNormal);
-
-	glm::vec3 reflectedDir = glm::reflect(ray.Direction, trace.WorldNormal);
-	float reflectedDirOpacity = isSpecularBounce * (1.0 - Roughness);//Roughnes & Specular Integration
-	ray.Direction = diffuseDir * (1.0f - reflectedDirOpacity) + reflectedDir * reflectedDirOpacity;//lerp
-
-	ray.Origin = trace.WorldPosition + trace.WorldNormal * EPSILON;//bias
-
 	return incomingLight;
 }
