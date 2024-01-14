@@ -84,8 +84,6 @@ void RaytraycerApp::CornellBox()
 	sphere->Radius = glossy_sphere_radius;
 	m_Scene.Primitives.push_back(std::move(sphere));
 
-
-
 	std::unique_ptr<Box> box_rough = std::make_unique<Box>();
 	glm::vec3 offset = rough_box_size * glm::sqrt(2.0f) * 1.4f;
 	box_rough->Material = &m_Materials[MaterialIDRough];
@@ -93,20 +91,6 @@ void RaytraycerApp::CornellBox()
 	box_rough->Rotation = glm::vec3(0.0, 33.0f, 0.0f);
 	box_rough->Scale = rough_box_size;
 	m_Scene.Primitives.push_back(std::move(box_rough));
-
-	/*
-	std::unique_ptr<Sphere> sphere_rough = std::make_unique<Sphere>();
-	sphere_rough->Material = &m_Materials[MaterialIDRough];
-	sphere_rough->Position = glm::vec3(0.0f, -box_size_halved, 0.0f) + rough_sphere_radius * glm::vec3(0.0f, 1.0, 0.0f);
-	sphere_rough->Radius = rough_sphere_radius;
-	m_Scene.Primitives.push_back(std::move(sphere_rough));
-
-	std::unique_ptr<Sphere> sphere_rough2 = std::make_unique<Sphere>();
-	sphere_rough2->Material = &m_Materials[MaterialIDRough];
-	sphere_rough2->Position = glm::vec3(box_size_halved - offset.x, -box_size_halved + rough_box_size.y * 2.0 + rough_box_size.x * 0.5f, -box_size_halved + offset.z);
-	sphere_rough2->Radius = rough_box_size.x;
-	m_Scene.Primitives.push_back(std::move(sphere_rough2));
-	*/
 }
 
 void RaytraycerApp::SceneOutdoor()

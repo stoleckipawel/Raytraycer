@@ -88,8 +88,6 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 	ray.Direction = glm::normalize(m_ActiveCamera->GetRayDirections()[x + y * m_FrontBuffer->GetWidth()]);
 
 	glm::vec3 incomingLight = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 transmissionContribution = glm::vec3(1.0f, 1.0f, 1.0f);
-
 	for (int i = 0; i < m_Settings.Bounces; i++)
 	{
 		Trace trace = TraceScene(ray);
@@ -97,42 +95,20 @@ glm::vec4 Renderer::RayGen(uint32_t x, uint32_t y)
 		if (trace.Result == TraceResult::Miss)
 		{
 			glm::vec3 environmentLight = m_ActiveScene->EnvironmentLight.SampleEnvironment(ray, m_ActiveScene->GetDirectionalLights());
-			incomingLight += environmentLight * transmissionContribution;
+			incomingLight += environmentLight * ray.Transmission;
 			break;
 		}
 
 		if (m_Settings.DebugNormal)
 		{
-			//Red - Right
-			//Green - UP
-			//Blue  Front
-			incomingLight = trace.WorldNormal * 0.5f + 0.5f;
+			incomingLight = trace.WorldNormal * 0.5f + 0.5f;//Red - Right//Green - UP//Blue  Front
 			break;
 		}
 
+		//Accumulate Incoming light & Setup new ray bonce ray dir
 		const Primitive* primitive = m_ActiveScene->Primitives[trace.HitGuid].get();
-		//Surface Properties
-		float opacity = primitive->Material->Opacity;
-		glm::vec3 diffuseAlbedo = primitive->Material->Albedo;
-		float specularAlbedo = primitive->Material->Specular;
-		glm::vec3 emmisive = primitive->Material->Emmisive;// *opacity;
-
-		//Emmisive
-		incomingLight += emmisive * transmissionContribution;
-		
-		float fresnel = Utils::FresnelSchlick(specularAlbedo, AIR_IOR, 1.0f, ray.Direction, trace.WorldNormal);
-		bool isSpecularBounce = fresnel >= Walnut::Random::Float();//assumes temporal accumulation
-
-		glm::vec3 hitTranssmission = isSpecularBounce ? glm::vec3(fresnel, fresnel, fresnel) : diffuseAlbedo;
-		transmissionContribution *= hitTranssmission;
-
-		glm::vec3 diffuseDir = Utils::RandomHemisphereDir(trace.WorldNormal);
-
-		glm::vec3 reflectedDir = glm::reflect(ray.Direction, trace.WorldNormal);
-		float reflectedDirOpacity = isSpecularBounce * (1.0 - primitive->Material->Roughness);//Roughnes & Specular Integration
-		ray.Direction = diffuseDir * (1.0f - reflectedDirOpacity) + reflectedDir * reflectedDirOpacity;//lerp
-
-		ray.Origin = trace.WorldPosition + trace.WorldNormal * m_epsilon;//bias
+		const Material* material = primitive->Material;
+		incomingLight += material->Resolve(ray, trace);
 	}
 
 	return glm::vec4(incomingLight, 1.0f);

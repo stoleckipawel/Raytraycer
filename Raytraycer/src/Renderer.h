@@ -45,7 +45,7 @@ private:
 	uint32_t m_FrameIndex = 1;
 
 	const float m_epsilon = 1.0f / 255.0f;
-	const float AIR_IOR = 1.0003f;
+	
 
 	std::vector<uint32_t> m_HorizontalPixelsIterator;
 	std::vector<uint32_t> m_VerticalPixelsIterator;
